@@ -19,11 +19,15 @@ public class GameService {
     private GameRepository gameRepository;
 
     @Autowired
-    private SteamService steamService;
+    private RawgService rawgService;
 
     @Transactional
     public void importGamesFromSteam() {
-        List<Map<String, Object>> steamGames = steamService.getPopularGames();
+        // Usar RAWG en lugar de Steam (más confiable)
+        List<Map<String, Object>> steamGames = rawgService.getPopularGames();
+
+        // O si prefieres Steam, usa:
+        // List<Map<String, Object>> steamGames = steamService.getPopularGames();
 
         for (Map<String, Object> gameData : steamGames) {
             String steamAppId = (String) gameData.get("steamAppId");
