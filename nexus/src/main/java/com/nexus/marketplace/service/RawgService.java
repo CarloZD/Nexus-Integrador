@@ -13,19 +13,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-
 @Service
 public class RawgService {
 
     @Autowired
     private RestTemplate restTemplate;
 
+    @Value("${rawg.api.key}")
+    private String apiKey;
+
     private final ObjectMapper objectMapper;
     private final Random random;
 
-    // Obtén tu API key gratis en: https://rawg.io/api
-    // O usa esta temporal (límite de 20,000 requests/mes)
-    private static final String API_KEY = "8350ea33ef5f40e991422dcc33d463a3";
     private static final String BASE_URL = "https://api.rawg.io/api";
 
     public RawgService() {
@@ -38,7 +37,7 @@ public class RawgService {
 
         try {
             // Obtener juegos populares con metacritic > 80
-            String url = BASE_URL + "/games?key=" + API_KEY +
+            String url = BASE_URL + "/games?key=" + apiKey +
                     "&page_size=20&metacritic=80,100&ordering=-rating";
 
             String response = restTemplate.getForObject(url, String.class);
@@ -63,7 +62,7 @@ public class RawgService {
 
     public Map<String, Object> getGameDetails(String gameSlug) {
         try {
-            String url = BASE_URL + "/games/" + gameSlug + "?key=" + API_KEY;
+            String url = BASE_URL + "/games/" + gameSlug + "?key=" + apiKey;
             String response = restTemplate.getForObject(url, String.class);
             JsonNode gameNode = objectMapper.readTree(response);
 
