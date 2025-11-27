@@ -1,7 +1,18 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import Catalog from './pages/Catalog';
+
 export default function App() {
   return (
-    <h1 className="text-3xl font-bold text-center mt-10">
-      Nexus frontend funcionando 
-    </h1>
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        <Toaster position="top-right" />
+        
+        <Routes>
+          <Route path="/" element={<Catalog />} />
+          <Route path="/catalog" element={<Catalog />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
