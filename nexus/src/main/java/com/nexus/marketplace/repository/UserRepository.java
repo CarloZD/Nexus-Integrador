@@ -1,6 +1,5 @@
 package com.nexus.marketplace.repository;
 
-package com.nexus.marketplace.repository;
 
 import com.nexus.marketplace.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;

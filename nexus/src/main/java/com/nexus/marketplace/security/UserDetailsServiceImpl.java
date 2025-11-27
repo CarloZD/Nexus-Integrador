@@ -1,6 +1,6 @@
 package com.nexus.marketplace.security;
 
-package com.nexus.marketplace.security;
+
 
 import com.nexus.marketplace.domain.User;
 import com.nexus.marketplace.repository.UserRepository;
