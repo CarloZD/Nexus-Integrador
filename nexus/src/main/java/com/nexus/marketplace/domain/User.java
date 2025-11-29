@@ -47,9 +47,6 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
-
     public enum UserRole {
         USER,
         ADMIN
