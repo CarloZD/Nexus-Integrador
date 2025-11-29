@@ -1340,3 +1340,109 @@ Caused by: java.sql.SQLException: Data truncated for column 'role' at row 1
 2025-11-29T16:22:03.897-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.security.web.FilterChainProxy        : Securing GET /api/games
 2025-11-29T16:22:03.898-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
 2025-11-29T16:22:03.898-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T16:31:11.986-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T16:31:11.986-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T16:31:11.987-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T16:31:15.562-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-9] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T16:31:15.562-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-9] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T16:31:15.563-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-9] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T16:31:15.575-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-10] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T16:31:15.576-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-10] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T16:31:15.577-05:00 DEBUG 16160 --- [nexus-marketplace] [http-nio-8080-exec-10] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:03:17.818-05:00  INFO 16160 --- [nexus-marketplace] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-11-29T17:03:17.820-05:00  INFO 16160 --- [nexus-marketplace] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-11-29T17:03:17.822-05:00  INFO 16160 --- [nexus-marketplace] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-11-29T17:10:27.590-05:00  INFO 5328 --- [nexus-marketplace] [main] com.nexus.marketplace.NexusApplication   : Starting NexusApplication using Java 21.0.8 with PID 5328 (C:\Users\carlo\OneDrive\Desktop\Nexus-Integrador\nexus\target\classes started by carlo in C:\Users\carlo\OneDrive\Desktop\Nexus-Integrador\nexus)
+2025-11-29T17:10:27.591-05:00 DEBUG 5328 --- [nexus-marketplace] [main] com.nexus.marketplace.NexusApplication   : Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-11-29T17:10:27.592-05:00  INFO 5328 --- [nexus-marketplace] [main] com.nexus.marketplace.NexusApplication   : No active profile set, falling back to 1 default profile: "default"
+2025-11-29T17:10:28.182-05:00  INFO 5328 --- [nexus-marketplace] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-11-29T17:10:28.230-05:00  INFO 5328 --- [nexus-marketplace] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 42 ms. Found 3 JPA repository interfaces.
+2025-11-29T17:10:28.830-05:00  INFO 5328 --- [nexus-marketplace] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-11-29T17:10:28.839-05:00  INFO 5328 --- [nexus-marketplace] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-11-29T17:10:28.839-05:00  INFO 5328 --- [nexus-marketplace] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.16]
+2025-11-29T17:10:28.902-05:00  INFO 5328 --- [nexus-marketplace] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-11-29T17:10:28.903-05:00  INFO 5328 --- [nexus-marketplace] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1282 ms
+2025-11-29T17:10:29.021-05:00  INFO 5328 --- [nexus-marketplace] [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-11-29T17:10:29.103-05:00  INFO 5328 --- [nexus-marketplace] [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.3.1.Final
+2025-11-29T17:10:29.149-05:00  INFO 5328 --- [nexus-marketplace] [main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-11-29T17:10:29.386-05:00  INFO 5328 --- [nexus-marketplace] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-11-29T17:10:29.412-05:00  INFO 5328 --- [nexus-marketplace] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-11-29T17:10:29.531-05:00  INFO 5328 --- [nexus-marketplace] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6fbe4800
+2025-11-29T17:10:29.533-05:00  INFO 5328 --- [nexus-marketplace] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-11-29T17:10:29.558-05:00  WARN 5328 --- [nexus-marketplace] [main] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-11-29T17:10:29.558-05:00  WARN 5328 --- [nexus-marketplace] [main] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2025-11-29T17:10:30.363-05:00  INFO 5328 --- [nexus-marketplace] [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-11-29T17:10:30.452-05:00  INFO 5328 --- [nexus-marketplace] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-11-29T17:10:30.732-05:00 DEBUG 5328 --- [nexus-marketplace] [main] c.n.m.security.JwtAuthenticationFilter   : Filter 'jwtAuthenticationFilter' configured for use
+2025-11-29T17:10:30.846-05:00  INFO 5328 --- [nexus-marketplace] [main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-11-29T17:10:31.543-05:00  WARN 5328 --- [nexus-marketplace] [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-11-29T17:10:31.787-05:00  INFO 5328 --- [nexus-marketplace] [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1062f767, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6d9020e6, org.springframework.security.web.context.SecurityContextHolderFilter@42a4b97, org.springframework.security.web.header.HeaderWriterFilter@7be9e5fb, org.springframework.web.filter.CorsFilter@4a3d0660, org.springframework.security.web.authentication.logout.LogoutFilter@568c4909, com.nexus.marketplace.security.JwtAuthenticationFilter@293ba26c, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@62edb254, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@449ca6b6, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@79172834, org.springframework.security.web.session.SessionManagementFilter@68b2a686, org.springframework.security.web.access.ExceptionTranslationFilter@177aef4f, org.springframework.security.web.access.intercept.AuthorizationFilter@129df247]
+2025-11-29T17:10:32.044-05:00  INFO 5328 --- [nexus-marketplace] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2025-11-29T17:10:32.050-05:00  INFO 5328 --- [nexus-marketplace] [main] com.nexus.marketplace.NexusApplication   : Started NexusApplication in 4.79 seconds (process running for 5.39)
+2025-11-29T17:11:47.601-05:00  INFO 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-29T17:11:47.601-05:00  INFO 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-11-29T17:11:47.602-05:00  INFO 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2025-11-29T17:11:47.609-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Securing POST /api/auth/login
+2025-11-29T17:11:47.616-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:11:47.616-05:00  WARN 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.w.s.h.HandlerMappingIntrospector     : Cache miss for REQUEST dispatch to '/api/auth/login' (previous null). Performing MatchableHandlerMapping lookup. This is logged once only at WARN level, and every time at TRACE.
+2025-11-29T17:11:47.621-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Secured POST /api/auth/login
+2025-11-29T17:11:47.639-05:00  WARN 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.http.converter.HttpMessageNotReadableException: Required request body is missing: public org.springframework.http.ResponseEntity<?> com.nexus.marketplace.controller.AuthController.login(com.nexus.marketplace.dto.auth.LoginRequest)]
+2025-11-29T17:11:47.642-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Securing POST /error
+2025-11-29T17:11:47.645-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:11:47.646-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.s.w.a.Http403ForbiddenEntryPoint     : Pre-authenticated entry point called. Rejecting access
+2025-11-29T17:12:08.379-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Securing POST /api/auth/login
+2025-11-29T17:12:08.380-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:12:08.380-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Secured POST /api/auth/login
+2025-11-29T17:12:08.381-05:00  WARN 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.http.converter.HttpMessageNotReadableException: Required request body is missing: public org.springframework.http.ResponseEntity<?> com.nexus.marketplace.controller.AuthController.login(com.nexus.marketplace.dto.auth.LoginRequest)]
+2025-11-29T17:12:08.381-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Securing POST /error
+2025-11-29T17:12:08.382-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:12:08.382-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.s.w.a.Http403ForbiddenEntryPoint     : Pre-authenticated entry point called. Rejecting access
+2025-11-29T17:12:13.697-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] o.s.security.web.FilterChainProxy        : Securing GET /api/auth/login
+2025-11-29T17:12:13.697-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:12:13.700-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] o.s.security.web.FilterChainProxy        : Secured GET /api/auth/login
+2025-11-29T17:12:13.701-05:00  WARN 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'GET' is not supported]
+2025-11-29T17:12:13.702-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] o.s.security.web.FilterChainProxy        : Securing GET /error
+2025-11-29T17:12:13.704-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:12:13.704-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-5] o.s.s.w.a.Http403ForbiddenEntryPoint     : Pre-authenticated entry point called. Rejecting access
+2025-11-29T17:16:00.548-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:16:00.554-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:16:00.555-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:33:10.778-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-10] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:33:10.779-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-10] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:33:10.780-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-10] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:33:10.791-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:33:10.792-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:33:10.793-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:33:11.783-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-2] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:33:11.784-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-2] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:33:11.785-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-2] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:33:11.801-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:33:11.801-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:33:11.802-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:33:15.600-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:33:15.601-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:33:15.601-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:34:58.696-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:34:58.697-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:34:58.697-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:34:58.706-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:34:58.706-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:34:58.707-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:36:40.218-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:36:40.219-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:36:40.219-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-1] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:36:40.225-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-2] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:36:40.226-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-2] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:36:40.226-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-2] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:36:42.810-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:36:42.811-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:36:42.811-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-3] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:36:42.818-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:36:42.819-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:36:42.819-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-4] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:38:50.849-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:38:50.850-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:38:50.850-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-7] o.s.security.web.FilterChainProxy        : Secured GET /api/games
+2025-11-29T17:38:50.860-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.security.web.FilterChainProxy        : Securing GET /api/games
+2025-11-29T17:38:50.861-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2025-11-29T17:38:50.861-05:00 DEBUG 5328 --- [nexus-marketplace] [http-nio-8080-exec-8] o.s.security.web.FilterChainProxy        : Secured GET /api/games
