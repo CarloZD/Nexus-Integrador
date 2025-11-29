@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.nexus.marketplace.exception.ResourceNotFoundException;
 
 @Service
 public class AuthService {
@@ -101,6 +102,20 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .expiresIn(jwtExpiration)
+                .build();
+    }
+    public UserDTO getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        return UserDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .fullName(user.getFullName())
+                .role(user.getRole().name())
+                .active(user.getActive())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }
