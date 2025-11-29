@@ -30,25 +30,31 @@ public class Game {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "short_description", length = 500)
+    @Column(name = "short_description", columnDefinition = "TEXT")
     private String shortDescription;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "header_image")
+    @Column(name = "header_image", length = 500)
     private String headerImage;
 
-    @Column(name = "background_image")
+    @Column(name = "background_image", length = 500)
     private String backgroundImage;
 
+    @Column(length = 200)
     private String developer;
+
+    @Column(length = 200)
     private String publisher;
 
     @Column(name = "release_date")
     private String releaseDate;
 
+    @Column(columnDefinition = "TEXT")
     private String genres;
+
+    @Column(columnDefinition = "TEXT")
     private String categories;
 
     @Column(name = "is_free")

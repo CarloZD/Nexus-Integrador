@@ -1,0 +1,21 @@
+# Backend
+nexus/target/
+nexus/logs/
+*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+*.env.local
+application-local.properties
