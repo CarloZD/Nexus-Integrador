@@ -8,6 +8,7 @@ import com.nexus.marketplace.dto.auth.RegisterRequest;
 import com.nexus.marketplace.dto.user.UserDTO;
 import com.nexus.marketplace.repository.UserRepository;
 import com.nexus.marketplace.security.JwtUtil;
+import com.nexus.marketplace.util.PasswordValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -118,6 +119,8 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        auditService.logLogin(user.getId(), "0.0.0.0");
+
         return UserDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -127,9 +130,5 @@ public class AuthService {
                 .active(user.getActive())
                 .createdAt(user.getCreatedAt())
                 .build();
-
-        auditService.logLogin(user.getId(), "0.0.0.0");
-
-
     }
 }

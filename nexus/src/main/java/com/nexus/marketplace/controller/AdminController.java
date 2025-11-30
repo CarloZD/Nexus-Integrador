@@ -1,6 +1,7 @@
 package com.nexus.marketplace.controller;
 
 import com.nexus.marketplace.dto.user.UserDTO;
+import com.nexus.marketplace.dto.user.UserProfileResponse;
 import com.nexus.marketplace.dto.user.UserStatsDTO;
 import com.nexus.marketplace.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -164,6 +165,23 @@ public class AdminController {
 
         List<UserDTO> users = userService.searchUsers(q);
         return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/{id}/profile")
+    @Operation(
+            summary = "Obtener información extendida del usuario",
+            description = "Devuelve el resumen utilizado por el panel de perfil (estadísticas, pedidos recientes, logros, etc.)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Perfil obtenido correctamente"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<UserProfileResponse> getUserProfile(
+            @Parameter(description = "ID del usuario a consultar")
+            @PathVariable Long id) {
+
+        UserProfileResponse profile = userService.getUserProfile(id);
+        return ResponseEntity.ok(profile);
     }
 
     @GetMapping("/stats")

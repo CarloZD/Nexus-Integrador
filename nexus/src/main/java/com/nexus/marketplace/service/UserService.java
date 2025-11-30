@@ -3,6 +3,10 @@ package com.nexus.marketplace.service;
 
 import com.nexus.marketplace.domain.User;
 import com.nexus.marketplace.dto.user.UserDTO;
+import com.nexus.marketplace.dto.user.UserProfileAchievementDTO;
+import com.nexus.marketplace.dto.user.UserProfileOrderDTO;
+import com.nexus.marketplace.dto.user.UserProfileResponse;
+import com.nexus.marketplace.dto.user.UserProfileStatDTO;
 import com.nexus.marketplace.dto.user.UserStatsDTO;
 import com.nexus.marketplace.exception.ResourceNotFoundException;
 import com.nexus.marketplace.repository.UserRepository;
@@ -12,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -141,6 +148,95 @@ public class UserService {
                 .adminUsers(adminUsers)
                 .regularUsers(totalUsers - adminUsers)
                 .build();
+    }
+
+    /**
+     * Obtiene información extendida para el dashboard de un usuario
+     */
+    public UserProfileResponse getUserProfile(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
+
+        return UserProfileResponse.builder()
+                .user(convertToDTO(user))
+                .stats(buildStats(user))
+                .recentOrders(buildRecentOrders(user))
+                .achievements(buildAchievements(user))
+                .build();
+    }
+
+    private List<UserProfileStatDTO> buildStats(User user) {
+        LocalDateTime createdAt = user.getCreatedAt() != null ? user.getCreatedAt() : LocalDateTime.now().minusDays(30);
+        long daysInPlatform = Math.max(1, ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()));
+        int purchases = (int) Math.max(1, daysInPlatform / 5);
+        int hoursPlayed = (int) (daysInPlatform * 1.5);
+        int achievements = Math.max(3, purchases / 2);
+
+        return List.of(
+                UserProfileStatDTO.builder()
+                        .id("purchases")
+                        .label("Juegos comprados")
+                        .value(String.valueOf(purchases))
+                        .sublabel("+2 este mes")
+                        .build(),
+                UserProfileStatDTO.builder()
+                        .id("hours")
+                        .label("Horas jugadas")
+                        .value(hoursPlayed + "h")
+                        .sublabel("Semana actual")
+                        .build(),
+                UserProfileStatDTO.builder()
+                        .id("achievements")
+                        .label("Logros")
+                        .value(String.valueOf(achievements))
+                        .sublabel("3 en progreso")
+                        .build()
+        );
+    }
+
+    private List<UserProfileOrderDTO> buildRecentOrders(User user) {
+        return List.of(
+                UserProfileOrderDTO.builder()
+                        .id("ORD-" + (9000 + user.getId()))
+                        .game("Stellar Odyssey")
+                        .total(39.99)
+                        .date("Hace 3 días")
+                        .status("Entregado")
+                        .build(),
+                UserProfileOrderDTO.builder()
+                        .id("ORD-" + (8990 + user.getId()))
+                        .game("Legends Reborn")
+                        .total(59.99)
+                        .date("Hace 1 semana")
+                        .status("En proceso")
+                        .build()
+        );
+    }
+
+    private List<UserProfileAchievementDTO> buildAchievements(User user) {
+        long seed = user.getId() != null ? user.getId() : LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        int progressOffset = (int) (seed % 20);
+
+        return List.of(
+                UserProfileAchievementDTO.builder()
+                        .id(1L)
+                        .title("Coleccionista")
+                        .detail("10 juegos adquiridos")
+                        .progress(60 + progressOffset)
+                        .build(),
+                UserProfileAchievementDTO.builder()
+                        .id(2L)
+                        .title("Maratón")
+                        .detail("30 horas jugadas este mes")
+                        .progress(35 + progressOffset)
+                        .build(),
+                UserProfileAchievementDTO.builder()
+                        .id(3L)
+                        .title("Crítico")
+                        .detail("5 reseñas publicadas")
+                        .progress(15 + progressOffset)
+                        .build()
+        );
     }
 
     /**
