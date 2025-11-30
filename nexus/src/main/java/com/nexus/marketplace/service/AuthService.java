@@ -34,6 +34,9 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private AuditService auditService;
+
     @Value("${jwt.expiration}")
     private Long jwtExpiration;
 
@@ -47,6 +50,11 @@ public class AuthService {
         // Validar username único
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("El username ya está en uso");
+        }
+
+        PasswordValidator.ValidationResult passwordValidation = PasswordValidator.validate(request.getPassword());
+        if (!passwordValidation.isValid()) {
+            throw new RuntimeException(passwordValidation.getErrorMessage());
         }
 
         // Crear usuario
@@ -104,6 +112,7 @@ public class AuthService {
                 .role(user.getRole().name())
                 .expiresIn(jwtExpiration)
                 .build();
+
     }
     public UserDTO getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
@@ -118,5 +127,9 @@ public class AuthService {
                 .active(user.getActive())
                 .createdAt(user.getCreatedAt())
                 .build();
+
+        auditService.logLogin(user.getId(), "0.0.0.0");
+
+
     }
 }
