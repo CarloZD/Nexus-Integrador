@@ -16,7 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
 
-    // Nuevos métodos para admin
     long countByActiveTrue();
     long countByRole(User.UserRole role);
 
