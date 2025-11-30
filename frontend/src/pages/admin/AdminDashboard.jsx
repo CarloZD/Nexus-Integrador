@@ -1,137 +1,254 @@
-import { Gamepad2, Users, Shield, Activity, ShoppingBag, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react';
-
-const metrics = [
-  { id: 'users', label: 'Usuarios activos', value: '1,248', trend: '+18% vs. mes pasado', icon: Users, color: 'text-primary-600', bg: 'bg-primary-50' },
-  { id: 'sales', label: 'Ventas del mes', value: '$42K', trend: '+6% crecimiento', icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { id: 'games', label: 'Juegos publicados', value: '320', trend: '12 pendientes', icon: Gamepad2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  { id: 'incidents', label: 'Reportes abiertos', value: '5', trend: '2 críticos', icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
-];
-
-const pendingApprovals = [
-  { id: 'GA-9821', title: 'Cyber Drift', studio: 'Quantum Forge', genre: 'Racing', status: 'En revisión' },
-  { id: 'GA-9819', title: 'Forgotten Isles', studio: 'Pixel Bloom', genre: 'Adventure', status: 'QA' },
-  { id: 'GA-9818', title: 'Hexa Tactics', studio: 'Mindset Labs', genre: 'Strategy', status: 'Pendiente' },
-];
-
-const latestUsers = [
-  { id: 1, name: 'María López', email: 'maria@nexus.gg', role: 'ADMIN', status: 'Activo' },
-  { id: 2, name: 'Jorge Paez', email: 'jorge@nexus.gg', role: 'MOD', status: 'Pendiente' },
-  { id: 3, name: 'Ana Ruiz', email: 'ana@nexus.gg', role: 'USER', status: 'Activo' },
-];
+import { useState, useEffect } from 'react';
+import { Users, Package, TrendingUp, Activity, Shield, Loader2, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import axiosInstance from '../../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, usersRes] = await Promise.all([
+        axiosInstance.get('/admin/stats'),
+        axiosInstance.get('/admin/users?size=10')
+      ]);
+
+      setStats(statsRes.data);
+      setUsers(usersRes.data.content || usersRes.data);
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      toast.error('Error al cargar datos de administración');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleUserStatus = async (userId) => {
+    try {
+      await axiosInstance.put(`/admin/users/${userId}/toggle-status`);
+      toast.success('Estado del usuario actualizado');
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al actualizar el usuario');
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+    
+    try {
+      await axiosInstance.delete(`/admin/users/${userId}`);
+      toast.success('Usuario eliminado');
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al eliminar el usuario');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-primary-600" size={48} />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-slate-950 min-h-screen py-10">
+    <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Encabezado */}
-        <header className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">panel administrativo</p>
-            <h1 className="text-4xl font-semibold text-white mt-2">Control central Nexus</h1>
-            <p className="text-slate-400 mt-2 max-w-2xl">
-              Supervisa usuarios, juegos y operaciones clave en una sola vista. Todos los datos se actualizan cada hora.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button className="px-6 py-3 bg-white text-slate-900 rounded-2xl font-semibold hover:bg-slate-100 transition">
-              Crear anuncio
-            </button>
-            <button className="px-6 py-3 border border-slate-700 text-white rounded-2xl font-semibold hover:border-slate-500 transition">
-              Configuración
-            </button>
-          </div>
-        </header>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
+          <p className="text-gray-600 mt-2">Gestiona usuarios, juegos y configuración</p>
+        </div>
 
-        {/* Métricas */}
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {metrics.map(({ id, label, value, trend, icon: Icon, color, bg }) => (
-            <div key={id} className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl shadow-black/20">
-              <div className={`w-12 h-12 rounded-2xl ${bg} flex items-center justify-center mb-4`}>
-                <Icon className={color} size={24} />
-              </div>
-              <p className="text-sm text-slate-400">{label}</p>
-              <h3 className="text-3xl font-bold text-white">{value}</h3>
-              <p className="text-sm text-slate-500">{trend}</p>
-            </div>
-          ))}
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-5">
-          {/* Actividad */}
-          <div className="lg:col-span-3 bg-slate-900/60 border border-slate-800 rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400 uppercase tracking-widest">Estado de la plataforma</p>
-                <h2 className="text-2xl font-semibold text-white">Monitoreo en tiempo real</h2>
+                <p className="text-sm text-gray-600">Total Usuarios</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
+                <p className="text-sm text-green-600 mt-1">{stats?.activeUsers || 0} activos</p>
               </div>
-              <button className="text-sm text-primary-300 hover:text-primary-200 font-semibold">Ver reportes</button>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/40">
-                <div className="flex items-center gap-3 mb-2">
-                  <Activity className="text-emerald-400" size={20} />
-                  <p className="text-sm text-slate-400">Latencia promedio</p>
-                </div>
-                <p className="text-3xl font-bold text-white">86 ms</p>
-                <p className="text-sm text-emerald-400 mt-1">Estable</p>
-              </div>
-              <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/40">
-                <div className="flex items-center gap-3 mb-2">
-                  <Shield className="text-sky-400" size={20} />
-                  <p className="text-sm text-slate-400">Seguridad</p>
-                </div>
-                <p className="text-3xl font-bold text-white">0 incidentes</p>
-                <p className="text-sm text-slate-500 mt-1">Últimas 24h</p>
-              </div>
-            </div>
-            <div className="mt-6 space-y-4">
-              {pendingApprovals.map((game) => (
-                <div key={game.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
-                  <div>
-                    <p className="font-semibold text-white">{game.title}</p>
-                    <p className="text-sm text-slate-400">{game.studio} • {game.genre}</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold border border-slate-700 text-slate-300">
-                    {game.status}
-                  </span>
-                </div>
-              ))}
+              <Users className="text-primary-600" size={40} />
             </div>
           </div>
 
-          {/* Usuarios recientes */}
-          <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-3xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <BarChart3 className="text-primary-300" size={24} />
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400 uppercase tracking-widest">Equipo</p>
-                <h2 className="text-xl font-semibold text-white">Movimientos recientes</h2>
+                <p className="text-sm text-gray-600">Administradores</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.adminUsers || 0}</p>
+                <p className="text-sm text-gray-500 mt-1">Con permisos completos</p>
               </div>
+              <Shield className="text-purple-600" size={40} />
             </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Usuarios Regulares</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.regularUsers || 0}</p>
+              </div>
+              <Package className="text-blue-600" size={40} />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Usuarios Inactivos</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.inactiveUsers || 0}</p>
+              </div>
+              <Activity className="text-red-600" size={40} />
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-lg mb-6">
+          <div className="border-b border-gray-200">
+            <div className="flex space-x-8 px-6">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'overview'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Vista General
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'users'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Usuarios ({users.length})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        {activeTab === 'overview' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Resumen del Sistema</h2>
             <div className="space-y-4">
-              {latestUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between rounded-2xl border border-slate-800 p-4 bg-slate-950/30">
-                  <div>
-                    <p className="font-semibold text-white">{user.name}</p>
-                    <p className="text-sm text-slate-500">{user.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-semibold text-slate-400">{user.role}</p>
-                    <span className={`text-sm font-medium ${user.status === 'Activo' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {user.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Total de usuarios registrados</span>
+                <span className="font-bold text-primary-600">{stats?.totalUsers}</span>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Usuarios activos</span>
+                <span className="font-bold text-green-600">{stats?.activeUsers}</span>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Administradores</span>
+                <span className="font-bold text-purple-600">{stats?.adminUsers}</span>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Usuarios regulares</span>
+                <span className="font-bold text-blue-600">{stats?.regularUsers}</span>
+              </div>
             </div>
-            <button className="mt-6 w-full py-3 rounded-2xl bg-primary-600 text-white font-semibold hover:bg-primary-500 transition flex items-center justify-center gap-2">
-              <TrendingUp size={18} />
-              Ver equipo completo
-            </button>
           </div>
-        </section>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Usuario
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rol
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                        <div className="text-sm text-gray-500">{user.fullName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">{user.email}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.role === 'ADMIN'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {user.active ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => toggleUserStatus(user.id)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title={user.active ? 'Desactivar' : 'Activar'}
+                          >
+                            {user.active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                          </button>
+                          <button
+                            onClick={() => deleteUser(user.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

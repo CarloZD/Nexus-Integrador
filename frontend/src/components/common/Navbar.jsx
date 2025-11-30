@@ -1,6 +1,5 @@
-// frontend/src/components/common/Navbar.jsx
 import { useState } from 'react';
-import { User, ShoppingCart, LogIn, UserPlus, LogOut, Heart } from 'lucide-react';
+import { User, ShoppingCart, LogIn, UserPlus, LogOut, Heart, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import LoginModal from '../auth/LoginModal';
 import RegisterModal from '../auth/RegisterModal';
@@ -56,6 +55,18 @@ export default function Navbar() {
                   >
                     Mi Perfil
                   </button>
+                  
+                  {/* Botón Admin - solo visible para ADMIN */}
+                  {user?.role === 'ADMIN' && (
+                    <button
+                      onClick={() => window.location.href = '/admin'}
+                      className="flex items-center gap-2 text-purple-700 hover:text-purple-900 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-purple-50"
+                    >
+                      <Shield size={18} />
+                      Admin
+                    </button>
+                  )}
+                  
                   <button
                     onClick={() => window.location.href = '/cart'}
                     className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -74,6 +85,11 @@ export default function Navbar() {
                   <div className="hidden md:flex items-center space-x-2 text-sm text-gray-700">
                     <User size={18} />
                     <span className="font-medium">{user?.username}</span>
+                    {user?.role === 'ADMIN' && (
+                      <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
+                        ADMIN
+                      </span>
+                    )}
                   </div>
 
                   {/* Quick Actions */}
@@ -91,10 +107,6 @@ export default function Navbar() {
                     title="Carrito"
                   >
                     <ShoppingCart size={20} />
-                    {/* Badge de items en carrito (próximamente) */}
-                    {/* <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      3
-                    </span> */}
                   </button>
 
                   <button
