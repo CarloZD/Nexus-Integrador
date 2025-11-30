@@ -1,4 +1,3 @@
-// frontend/src/components/common/Navbar.jsx
 import { useState, useEffect } from 'react';
 import { User, ShoppingCart, LogIn, UserPlus, LogOut, Heart, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -33,6 +32,10 @@ export default function Navbar() {
     setShowLoginModal(true);
   };
 
+  const handleNavigate = (path) => {
+    window.location.href = path;
+  };
+
   return (
     <>
       <nav className="bg-white shadow-lg sticky top-0 z-40">
@@ -41,10 +44,10 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center">
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => handleNavigate('/')}
                 className="flex items-center"
               >
-                <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold text-2xl px-4 py-2 rounded-lg">
+                <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold text-2xl px-4 py-2 rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all">
                   NEXUS
                 </div>
               </button>
@@ -53,7 +56,7 @@ export default function Navbar() {
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-4">
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => handleNavigate('/')}
                 className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Catálogo
@@ -61,7 +64,7 @@ export default function Navbar() {
               {isLoggedIn && (
                 <>
                   <button
-                    onClick={() => window.location.href = '/profile'}
+                    onClick={() => handleNavigate('/profile')}
                     className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     Mi Perfil
@@ -70,7 +73,7 @@ export default function Navbar() {
                   {/* Botón Admin - solo visible para ADMIN */}
                   {user?.role === 'ADMIN' && (
                     <button
-                      onClick={() => window.location.href = '/admin'}
+                      onClick={() => handleNavigate('/admin')}
                       className="flex items-center gap-2 text-purple-700 hover:text-purple-900 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-purple-50"
                     >
                       <Shield size={18} />
@@ -96,9 +99,9 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  {/* Wishlist */}
+                  {/* Wishlist/Favoritos */}
                   <button
-                    onClick={() => window.location.href = '/profile'}
+                    onClick={() => handleNavigate('/profile')}
                     className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                     title="Mi Perfil"
                   >
@@ -107,13 +110,13 @@ export default function Navbar() {
 
                   {/* Cart con contador */}
                   <button
-                    onClick={() => window.location.href = '/cart'}
+                    onClick={() => handleNavigate('/cart')}
                     className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                     title="Carrito"
                   >
                     <ShoppingCart size={20} />
                     {cartCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                         {cartCount}
                       </span>
                     )}
@@ -147,6 +150,42 @@ export default function Navbar() {
                 </>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Mobile menu - opcional */}
+        <div className="md:hidden border-t border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {isLoggedIn && (
+              <>
+                <button
+                  onClick={() => handleNavigate('/')}
+                  className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
+                >
+                  Catálogo
+                </button>
+                <button
+                  onClick={() => handleNavigate('/profile')}
+                  className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
+                >
+                  Mi Perfil
+                </button>
+                <button
+                  onClick={() => handleNavigate('/cart')}
+                  className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
+                >
+                  Carrito {cartCount > 0 && `(${cartCount})`}
+                </button>
+                {user?.role === 'ADMIN' && (
+                  <button
+                    onClick={() => handleNavigate('/admin')}
+                    className="block w-full text-left px-3 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md text-sm font-medium"
+                  >
+                    Panel Admin
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
       </nav>

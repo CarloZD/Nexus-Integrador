@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, Heart, Calendar, User, Building, DollarSign, Loader2 } from 'lucide-react';
 import { gameApi } from '../api/gameApi';
+import { useCart } from '../hooks/useCart';
 import toast from 'react-hot-toast';
 
 export default function GameDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -78,8 +84,44 @@ export default function GameDetail() {
     }
   };
 
-  const handleAddToCart = () => {
-    toast.success('¡Agregado al carrito!');
+  const handleAddToCart = async () => {
+    if (!token) {
+      toast.error('Debes iniciar sesión para agregar al carrito');
+      return;
+    }
+
+    if (game.stock <= 0) {
+      toast.error('Producto sin stock');
+      return;
+    }
+
+    setAddingToCart(true);
+    try {
+      await addToCart(game.id, 1);
+      // El toast de éxito ya se muestra en useCart
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      // El toast de error ya se muestra en useCart
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!token) {
+      toast.error('Debes iniciar sesión para comprar');
+      return;
+    }
+
+    setAddingToCart(true);
+    try {
+      await addToCart(game.id, 1);
+      navigate('/cart');
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   if (loading) {
@@ -96,7 +138,7 @@ export default function GameDetail() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Juego no encontrado</h2>
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => navigate('/')}
             className="text-primary-600 hover:text-primary-700"
           >
             Volver al catálogo
@@ -118,7 +160,7 @@ export default function GameDetail() {
         <div className="absolute inset-0 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-white mb-6 hover:text-primary-300 transition-colors"
             >
               <ArrowLeft size={20} />
@@ -154,6 +196,9 @@ export default function GameDetail() {
                 src={game.headerImage}
                 alt={game.title}
                 className="w-full h-96 object-cover"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/800x450/1e3a8a/ffffff?text=No+Image';
+                }}
               />
             </div>
 
@@ -246,10 +291,28 @@ export default function GameDetail() {
               <div className="space-y-3">
                 <button
                   onClick={handleAddToCart}
-                  className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
+                  disabled={addingToCart || game.stock <= 0}
+                  className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ShoppingCart size={20} />
-                  Agregar al carrito
+                  {addingToCart ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Agregando...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={20} />
+                      Agregar al carrito
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleBuyNow}
+                  disabled={addingToCart || game.stock <= 0}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Comprar ahora
                 </button>
 
                 {token && (

@@ -1,57 +1,126 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
-import { userApi } from '../api/userApi';
-import { Loader2, User, ShieldCheck, ShoppingBag, Trophy, Activity, Mail, AlertTriangle } from 'lucide-react';
-
-const FALLBACK_USER = {
-  fullName: 'Invitado Nexus',
-  email: 'invitado@nexus.gg',
-  username: 'guest',
-  role: 'USER',
-};
-
-const STAT_ICON_MAP = {
-  purchases: ShoppingBag,
-  hours: Activity,
-  achievements: Trophy,
-};
-
-const formatAmount = (amount) => (typeof amount === 'number' ? amount.toFixed(2) : '0.00');
+import axiosInstance from '../api/axiosConfig';
+import { 
+  Loader2, User, Mail, Calendar, Shield, 
+  ShoppingBag, Heart, Edit2, Lock, Save, X 
+} from 'lucide-react';
 
 export default function Profile() {
   const { getCurrentUser } = useAuth();
   const [currentUser] = useState(() => getCurrentUser());
   const [profile, setProfile] = useState(null);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editData, setEditData] = useState({
+    username: '',
+    fullName: ''
+  });
+  const [changePasswordMode, setChangePasswordMode] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!currentUser?.id) {
-        setErrorMessage('Debes iniciar sesión para ver tu perfil');
-        setLoading(false);
-        return;
-      }
+    loadProfile();
+    loadFavorites();
+  }, []);
 
-      try {
-        const data = await userApi.getProfile(currentUser.id);
-        setProfile(data);
-      } catch (error) {
-        const message =
-          error.response?.data?.message ||
-          (error.response?.status === 403
-            ? 'No tienes permisos para ver esta sección (requiere rol ADMIN).'
-            : 'No se pudo cargar tu perfil. Intenta nuevamente.');
-        setErrorMessage(message);
-        toast.error(message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/profile');
+      setProfile(response.data);
+      setEditData({
+        username: response.data.username,
+        fullName: response.data.fullName
+      });
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast.error('Error al cargar el perfil');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProfile();
-  }, [currentUser?.id]);
+  const loadFavorites = async () => {
+    try {
+      const response = await axiosInstance.get('/user/favorites');
+      setFavorites(response.data);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    
+    if (!editData.username || !editData.fullName) {
+      toast.error('Todos los campos son requeridos');
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.put('/profile', editData);
+      setProfile(response.data);
+      
+      // Actualizar localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      user.username = response.data.username;
+      user.fullName = response.data.fullName;
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setEditMode(false);
+      toast.success('Perfil actualizado correctamente');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al actualizar perfil');
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    try {
+      await axiosInstance.put('/profile/password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setChangePasswordMode(false);
+      toast.success('Contraseña actualizada correctamente');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al cambiar contraseña');
+    }
+  };
+
+  const removeFavorite = async (gameId) => {
+    try {
+      await axiosInstance.delete(`/user/favorites/${gameId}`);
+      setFavorites(favorites.filter(fav => fav.id !== gameId));
+      toast.success('Eliminado de favoritos');
+    } catch (error) {
+      toast.error('Error al eliminar favorito');
+    }
+  };
 
   if (loading) {
     return (
@@ -61,16 +130,16 @@ export default function Profile() {
     );
   }
 
-  if (errorMessage) {
+  if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="bg-white border border-gray-200 rounded-3xl p-10 text-center shadow-lg max-w-lg">
-          <AlertTriangle className="mx-auto text-amber-500 mb-4" size={48} />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">No se pudo cargar el perfil</h2>
-          <p className="text-gray-600 mb-6">{errorMessage}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error al cargar perfil
+          </h2>
           <button
-            onClick={() => window.location.assign('/')}
-            className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition"
+            onClick={() => window.location.href = '/'}
+            className="text-primary-600 hover:text-primary-700"
           >
             Volver al inicio
           </button>
@@ -79,155 +148,283 @@ export default function Profile() {
     );
   }
 
-  const user = profile?.user || currentUser || FALLBACK_USER;
-  const stats = profile?.stats || [];
-  const orders = profile?.recentOrders || [];
-  const achievements = profile?.achievements || [];
-
   return (
     <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Encabezado */}
+        {/* Header Card */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 h-28" />
+          <div className="bg-gradient-to-r from-primary-600 to-primary-700 h-32" />
           <div className="-mt-16 px-8 pb-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-white shadow-lg flex items-center justify-center">
-                  <User className="text-primary-600" size={32} />
+                <div className="w-24 h-24 rounded-2xl bg-white shadow-lg flex items-center justify-center">
+                  <User className="text-primary-600" size={40} />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{user.fullName}</h1>
-                  <p className="text-gray-500 flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {profile.fullName}
+                  </h1>
+                  <p className="text-gray-500 flex items-center gap-2 mt-1">
                     <Mail size={16} className="text-primary-500" />
-                    {user.email}
+                    {profile.email}
                   </p>
-                  <p className="text-sm text-primary-600 font-medium mt-1">Rol: {user.role || 'USER'}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      profile.role === 'ADMIN' 
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {profile.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
+                    </span>
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <Calendar size={14} />
+                      Miembro desde {new Date(profile.createdAt).toLocaleDateString('es-ES', {
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                <button className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditMode(!editMode)}
+                  className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition flex items-center gap-2"
+                >
+                  <Edit2 size={18} />
                   Editar perfil
                 </button>
-                <button className="px-6 py-3 border border-gray-200 rounded-2xl font-semibold text-gray-700 hover:border-gray-300 transition">
-                  Preferencias
+                <button
+                  onClick={() => setChangePasswordMode(!changePasswordMode)}
+                  className="px-6 py-3 border border-gray-200 rounded-2xl font-semibold text-gray-700 hover:border-gray-300 transition flex items-center gap-2"
+                >
+                  <Lock size={18} />
+                  Cambiar contraseña
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Estadísticas rápidas */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {stats.map(({ id, label, value, sublabel }) => {
-            const Icon = STAT_ICON_MAP[id] || Activity;
-            const colorClass =
-              id === 'purchases' ? 'text-primary-600' : id === 'achievements' ? 'text-amber-600' : 'text-emerald-600';
-            const bgClass =
-              id === 'purchases' ? 'bg-primary-50' : id === 'achievements' ? 'bg-amber-50' : 'bg-emerald-50';
-
-            return (
-              <div key={id} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-md hover:shadow-lg transition">
-                <div className={`w-12 h-12 rounded-xl ${bgClass} flex items-center justify-center mb-4`}>
-                  <Icon className={colorClass} size={24} />
-                </div>
-                <p className="text-sm text-gray-500">{label}</p>
-                <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
-                <p className="text-sm text-gray-400">{sublabel}</p>
+        {/* Edit Profile Form */}
+        {editMode && (
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Editar Información</h2>
+              <button
+                onClick={() => setEditMode(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  value={editData.username}
+                  onChange={(e) => setEditData({...editData, username: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                />
               </div>
-            );
-          })}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
+                  value={editData.fullName}
+                  onChange={(e) => setEditData({...editData, fullName: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2"
+                >
+                  <Save size={18} />
+                  Guardar cambios
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditMode(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Change Password Form */}
+        {changePasswordMode && (
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Cambiar Contraseña</h2>
+              <button
+                onClick={() => setChangePasswordMode(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contraseña actual
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirmar nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2"
+                >
+                  <Lock size={18} />
+                  Cambiar contraseña
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChangePasswordMode(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Juegos en biblioteca</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+              </div>
+              <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="text-primary-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Favoritos</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{favorites.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                <Heart className="text-red-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Estado</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">Activo</p>
+              </div>
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <Shield className="text-green-600" size={24} />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Actividad reciente */}
-          <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Pedidos recientes</h2>
-                <p className="text-sm text-gray-500">Últimos movimientos en tu cuenta</p>
-              </div>
-              <button className="text-primary-600 text-sm font-semibold hover:text-primary-700">Ver historial</button>
+        {/* Favorites Section */}
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Mis Favoritos ({favorites.length})
+          </h2>
+          {favorites.length === 0 ? (
+            <div className="text-center py-12">
+              <Heart className="mx-auto text-gray-400 mb-4" size={48} />
+              <p className="text-gray-600">Aún no tienes juegos favoritos</p>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="mt-4 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+              >
+                Explorar juegos
+              </button>
             </div>
-            <div className="space-y-4">
-              {orders.length === 0 && (
-                <p className="text-sm text-gray-500">Aún no tienes pedidos registrados.</p>
-              )}
-              {orders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between rounded-2xl border border-gray-100 p-4 hover:bg-gray-50 transition">
-                  <div>
-                    <p className="font-semibold text-gray-900">{order.game}</p>
-                    <p className="text-sm text-gray-500">
-                      {order.id} • {order.date}
-                    </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {favorites.map((game) => (
+                <div key={game.id} className="bg-gray-50 rounded-xl overflow-hidden group hover:shadow-lg transition">
+                  <div className="relative h-40">
+                    <img
+                      src={game.headerImage}
+                      alt={game.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <button
+                      onClick={() => removeFavorite(game.id)}
+                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">${formatAmount(order.total)}</p>
-                    <p className={`text-sm ${order.status === 'Entregado' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {order.status}
-                    </p>
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 mb-2">{game.title}</h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-primary-600">
+                        ${parseFloat(game.price).toFixed(2)}
+                      </span>
+                      <button
+                        onClick={() => window.location.href = `/game/${game.id}`}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
+                      >
+                        Ver detalles
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Seguridad */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <ShieldCheck className="text-primary-600" size={24} />
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Seguridad</h2>
-                <p className="text-sm text-gray-500">Mantén tu cuenta protegida</p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50">
-                <p className="text-sm text-gray-600">Autenticación</p>
-                <p className="font-semibold text-gray-900">2FA pendiente de activar</p>
-              </div>
-              <div className="p-4 rounded-2xl border border-gray-100">
-                <p className="text-sm text-gray-600">Último inicio de sesión</p>
-                <p className="font-semibold text-gray-900">Hace 2 horas • CDMX</p>
-              </div>
-              <button className="w-full border border-primary-100 text-primary-600 font-semibold py-3 rounded-2xl hover:bg-primary-50 transition">
-                Revisar actividad
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Logros */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Logros y progreso</h2>
-              <p className="text-sm text-gray-500">Sigue desbloqueando recompensas</p>
-            </div>
-            <button className="text-sm font-semibold text-primary-600 hover:text-primary-700">Ver todos</button>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {achievements.length === 0 && <p className="text-sm text-gray-500">Aún no tienes logros registrados.</p>}
-            {achievements.map((achievement) => (
-              <div key={achievement.id} className="p-4 rounded-2xl border border-gray-100 hover:border-primary-200 transition">
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy className="text-amber-500" size={20} />
-                  <p className="font-semibold text-gray-900">{achievement.title}</p>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">{achievement.detail}</p>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary-500 to-primary-600"
-                    style={{ width: `${achievement.progress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">{achievement.progress}% completado</p>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

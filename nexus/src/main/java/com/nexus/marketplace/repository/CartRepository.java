@@ -15,8 +15,3 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     @Query("SELECT c FROM Cart c LEFT JOIN FETCH c.items WHERE c.user.id = :userId")
     Optional<Cart> findByUserIdWithItems(Long userId);
 }
-
-@Repository
-public interface CartItemRepository extends JpaRepository<CartItem, Long> {
-    Optional<CartItem> findByCartIdAndGameId(Long cartId, Long gameId);
-}
