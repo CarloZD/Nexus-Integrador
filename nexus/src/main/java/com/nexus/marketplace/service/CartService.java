@@ -27,7 +27,7 @@ public class CartService {
     @Autowired
     private GameRepository gameRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public CartDTO getOrCreateCart(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
@@ -40,18 +40,25 @@ public class CartService {
 
     @Transactional
     public CartDTO addToCart(String email, Long gameId, Integer quantity) {
+        // Validar cantidad
+        if (quantity == null || quantity <= 0) {
+            throw new RuntimeException("La cantidad debe ser mayor a 0");
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ResourceNotFoundException("Juego no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Juego no encontrado con ID: " + gameId));
 
+        // Validar que el juego esté activo
         if (!game.getActive()) {
-            throw new RuntimeException("Este juego no está disponible");
+            throw new RuntimeException("Este juego no está disponible actualmente");
         }
 
+        // Validar stock
         if (game.getStock() < quantity) {
-            throw new RuntimeException("Stock insuficiente");
+            throw new RuntimeException("Stock insuficiente. Solo quedan " + game.getStock() + " unidades");
         }
 
         Cart cart = cartRepository.findByUserIdWithItems(user.getId())
@@ -63,8 +70,16 @@ public class CartService {
                 .orElse(null);
 
         if (existingItem != null) {
-            // Actualizar cantidad
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            // Actualizar cantidad existente
+            int newQuantity = existingItem.getQuantity() + quantity;
+
+            // Validar stock para nueva cantidad
+            if (game.getStock() < newQuantity) {
+                throw new RuntimeException("Stock insuficiente. Solo puedes agregar " +
+                        (game.getStock() - existingItem.getQuantity()) + " unidades más");
+            }
+
+            existingItem.setQuantity(newQuantity);
             existingItem.calculateSubtotal();
             cartItemRepository.save(existingItem);
         } else {
@@ -75,7 +90,9 @@ public class CartService {
             newItem.setQuantity(quantity);
             newItem.setPrice(game.getPrice());
             newItem.calculateSubtotal();
+
             cart.addItem(newItem);
+            cartItemRepository.save(newItem);
         }
 
         cart.recalculateTotal();
@@ -86,6 +103,11 @@ public class CartService {
 
     @Transactional
     public CartDTO updateCartItem(String email, Long itemId, Integer quantity) {
+        // Validar cantidad
+        if (quantity == null || quantity < 0) {
+            throw new RuntimeException("La cantidad no puede ser negativa");
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
@@ -93,19 +115,24 @@ public class CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Carrito no encontrado"));
 
         CartItem item = cartItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado en el carrito"));
 
+        // Verificar que el item pertenezca al carrito del usuario
         if (!item.getCart().getId().equals(cart.getId())) {
-            throw new RuntimeException("El item no pertenece a este carrito");
+            throw new RuntimeException("El item no pertenece a tu carrito");
         }
 
-        if (quantity <= 0) {
+        if (quantity == 0) {
+            // Eliminar item si cantidad es 0
             cart.removeItem(item);
             cartItemRepository.delete(item);
         } else {
+            // Validar stock
             if (item.getGame().getStock() < quantity) {
-                throw new RuntimeException("Stock insuficiente");
+                throw new RuntimeException("Stock insuficiente. Solo quedan " +
+                        item.getGame().getStock() + " unidades disponibles");
             }
+
             item.setQuantity(quantity);
             item.calculateSubtotal();
             cartItemRepository.save(item);
@@ -128,8 +155,9 @@ public class CartService {
         CartItem item = cartItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
 
+        // Verificar que el item pertenezca al carrito del usuario
         if (!item.getCart().getId().equals(cart.getId())) {
-            throw new RuntimeException("El item no pertenece a este carrito");
+            throw new RuntimeException("El item no pertenece a tu carrito");
         }
 
         cart.removeItem(item);
@@ -185,10 +213,13 @@ public class CartService {
     private GameDTO convertGameToDTO(Game game) {
         return GameDTO.builder()
                 .id(game.getId())
+                .steamAppId(game.getSteamAppId())
                 .title(game.getTitle())
+                .shortDescription(game.getShortDescription())
                 .headerImage(game.getHeaderImage())
                 .price(game.getPrice())
                 .isFree(game.getIsFree())
+                .stock(game.getStock())
                 .build();
     }
 }

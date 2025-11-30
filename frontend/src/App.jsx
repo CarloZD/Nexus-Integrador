@@ -47,11 +47,21 @@ export default function App() {
         <Navbar />
 
         <Routes>
+          {/* Rutas públicas */}
           <Route path="/" element={<Catalog />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/game/:id" element={<GameDetail />} />
           
           {/* Rutas protegidas - requieren login */}
+          <Route 
+            path="/cart" 
+            element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route 
             path="/profile" 
             element={

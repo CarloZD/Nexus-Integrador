@@ -1,15 +1,7 @@
 import axios from 'axios';
 
-// Validar y construir la URL base correctamente
-const getApiUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl.trim() !== '' && envUrl.startsWith('http')) {
-    return envUrl;
-  }
-  return 'http://localhost:8080/api';
-};
-
-const API_URL = getApiUrl();
+// URL base de la API - CORREGIDA
+const API_URL = 'http://localhost:8080/api';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Heart, Calendar, User, Building, DollarSign, Loader2 } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Heart, Calendar, User, Building, DollarSign, Loader2, CheckCircle, Package } from 'lucide-react';
 import { gameApi } from '../api/gameApi';
 import { useCart } from '../hooks/useCart';
 import toast from 'react-hot-toast';
@@ -13,7 +13,8 @@ export default function GameDetail() {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
   
   const token = localStorage.getItem('token');
 
@@ -26,61 +27,11 @@ export default function GameDetail() {
       setLoading(true);
       const data = await gameApi.getGameById(id);
       setGame(data);
-      
-      if (token) {
-        checkFavorite();
-      }
     } catch (error) {
       console.error('Error loading game:', error);
       toast.error('Error al cargar el juego');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkFavorite = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/user/favorites/${id}/check`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      const data = await response.json();
-      setIsFavorite(data.isFavorite);
-    } catch (error) {
-      console.error('Error checking favorite:', error);
-    }
-  };
-
-  const toggleFavorite = async () => {
-    if (!token) {
-      toast.error('Debes iniciar sesión para agregar favoritos');
-      return;
-    }
-
-    try {
-      const url = `http://localhost:8080/api/user/favorites/${id}`;
-      const method = isFavorite ? 'DELETE' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        setIsFavorite(!isFavorite);
-        toast.success(isFavorite ? 'Eliminado de favoritos' : 'Agregado a favoritos');
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error('Error al actualizar favoritos');
     }
   };
 
@@ -95,13 +46,22 @@ export default function GameDetail() {
       return;
     }
 
+    if (quantity > game.stock) {
+      toast.error(`Solo hay ${game.stock} unidades disponibles`);
+      return;
+    }
+
     setAddingToCart(true);
     try {
-      await addToCart(game.id, 1);
-      // El toast de éxito ya se muestra en useCart
+      await addToCart(game.id, quantity);
+      setAddedToCart(true);
+      
+      // Resetear el estado después de 2 segundos
+      setTimeout(() => {
+        setAddedToCart(false);
+      }, 2000);
     } catch (error) {
       console.error('Error adding to cart:', error);
-      // El toast de error ya se muestra en useCart
     } finally {
       setAddingToCart(false);
     }
@@ -115,12 +75,26 @@ export default function GameDetail() {
 
     setAddingToCart(true);
     try {
-      await addToCart(game.id, 1);
+      await addToCart(game.id, quantity);
       navigate('/cart');
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setAddingToCart(false);
+    }
+  };
+
+  const incrementQuantity = () => {
+    if (quantity < game.stock) {
+      setQuantity(quantity + 1);
+    } else {
+      toast.error(`Stock máximo: ${game.stock} unidades`);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
     }
   };
 
@@ -250,6 +224,16 @@ export default function GameDetail() {
                     </div>
                   </div>
                 )}
+
+                <div className="flex items-start gap-3">
+                  <Package className="text-primary-600 mt-1" size={20} />
+                  <div>
+                    <p className="text-sm text-gray-600">Stock disponible</p>
+                    <p className="font-semibold text-gray-900">
+                      {game.stock > 0 ? `${game.stock} unidades` : 'Agotado'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {game.categories && (
@@ -287,17 +271,67 @@ export default function GameDetail() {
                 )}
               </div>
 
+              {/* Selector de cantidad */}
+              {!game.isFree && game.stock > 0 && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cantidad
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={decrementQuantity}
+                      disabled={quantity <= 1}
+                      className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        if (val >= 1 && val <= game.stock) {
+                          setQuantity(val);
+                        }
+                      }}
+                      min="1"
+                      max={game.stock}
+                      className="w-20 text-center border border-gray-300 rounded-lg py-2 font-semibold"
+                    />
+                    <button
+                      onClick={incrementQuantity}
+                      disabled={quantity >= game.stock}
+                      className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Máximo: {game.stock} unidades
+                  </p>
+                </div>
+              )}
+
               {/* Botones de acción */}
               <div className="space-y-3">
                 <button
                   onClick={handleAddToCart}
-                  disabled={addingToCart || game.stock <= 0}
-                  className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={addingToCart || game.stock <= 0 || addedToCart}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                    addedToCart
+                      ? 'bg-green-600 text-white'
+                      : 'bg-primary-600 text-white hover:bg-primary-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {addingToCart ? (
                     <>
                       <Loader2 className="animate-spin" size={20} />
                       Agregando...
+                    </>
+                  ) : addedToCart ? (
+                    <>
+                      <CheckCircle size={20} />
+                      ¡Agregado al carrito!
                     </>
                   ) : (
                     <>
@@ -314,23 +348,6 @@ export default function GameDetail() {
                 >
                   Comprar ahora
                 </button>
-
-                {token && (
-                  <button
-                    onClick={toggleFavorite}
-                    className={`w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-                      isFavorite
-                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Heart 
-                      size={20} 
-                      className={isFavorite ? 'fill-current' : ''}
-                    />
-                    {isFavorite ? 'En favoritos' : 'Agregar a favoritos'}
-                  </button>
-                )}
               </div>
 
               {/* Stock info */}
@@ -345,6 +362,18 @@ export default function GameDetail() {
                   <p className="text-sm text-red-700 text-center">
                     ✗ Agotado temporalmente
                   </p>
+                </div>
+              )}
+
+              {/* Subtotal */}
+              {!game.isFree && quantity > 1 && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="text-2xl font-bold text-primary-600">
+                      ${(parseFloat(game.price) * quantity).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
