@@ -31,7 +31,21 @@ cd Nexus-Integrador
 
 ### 2️⃣ Configurar Base de Datos
 
-**Opción A - Desde MySQL Workbench:**
+**Opción A - Importar desde archivo SQL (RECOMENDADO):**
+1. Abrir MySQL Workbench o cliente MySQL
+2. Crear nueva conexión (localhost:3306)
+3. Ejecutar el archivo SQL completo:
+   - Desde MySQL Workbench: File → Open SQL Script → Seleccionar `nexus.sql`
+   - Desde terminal:
+```bash
+mysql -u root -p < ruta/al/archivo/nexus.sql
+```
+   O si el archivo está en `C:\Users\carlo\OneDrive\Desktop\nexus.sql`:
+```bash
+mysql -u root -p < "C:\Users\carlo\OneDrive\Desktop\nexus.sql"
+```
+
+**Opción B - Crear base de datos vacía:**
 1. Abrir MySQL Workbench
 2. Crear nueva conexión (localhost:3306)
 3. Ejecutar estos comandos:
@@ -41,7 +55,7 @@ CREATE DATABASE nexus_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE nexus_db;
 ```
 
-**Opción B - Desde terminal:**
+**Opción C - Desde terminal:**
 ```bash
 mysql -u root -p
 ```
@@ -75,30 +89,25 @@ cd nexus
 
 El backend estará corriendo en `http://localhost:8080`
 
-⚠️ **IMPORTANTE:** En este punto el backend está corriendo pero la base de datos está **VACÍA**. Las tablas se crean automáticamente, pero sin datos. Si pruebas `curl http://localhost:8080/api/games` verás un array vacío `[]`.
+⚠️ **IMPORTANTE:** Si usaste la Opción A del paso 2 (importar desde archivo SQL), la base de datos ya tiene todas las tablas y datos. Si usaste las Opciones B o C, necesitas importar los datos.
 
 ### 4️⃣ Importar Juegos a la Base de Datos ⚡ PASO CRÍTICO
 
-**Este paso es OBLIGATORIO para que la aplicación muestre juegos.**
+**Este paso es OBLIGATORIO solo si creaste la base de datos vacía (Opciones B o C del paso 2).**
 
-**Opción A - Usando el endpoint de importación (puede fallar):**
+Si ya importaste el archivo `nexus.sql` completo, puedes saltar este paso.
+
+**Opción A - Importar desde archivo SQL completo (RECOMENDADO):**
+```bash
+mysql -u root -p < "C:\Users\carlo\OneDrive\Desktop\nexus.sql"
+```
+O desde MySQL Workbench: File → Open SQL Script → Seleccionar `nexus.sql` y ejecutar.
+
+**Opción B - Usando el endpoint de importación (puede fallar):**
 ```bash
 curl -X POST http://localhost:8080/api/games/import-steam
 ```
-⚠️ Este método usa la API de RAWG y puede fallar. Si falla, usar Opción B.
-
-**Opción B - Insertando manualmente con SQL (RECOMENDADO):**
-
-Abrir una nueva terminal y ejecutar:
-```bash
-mysql -u root -p nexus_db < docs/insert_games.sql
-```
-
-O desde MySQL Workbench/cliente MySQL:
-```sql
-USE nexus_db;
--- Copiar y pegar el contenido completo de docs/insert_games.sql
-```
+⚠️ Este método usa la API de RAWG y puede fallar. Si falla, usar Opción A.
 
 **Verificar que se importaron:**
 ```bash
@@ -110,7 +119,7 @@ O desde MySQL:
 ```bash
 mysql -u root -p -e "USE nexus_db; SELECT COUNT(*) FROM games;"
 ```
-Debería mostrar 16 juegos.
+Debería mostrar aproximadamente 40 juegos si usaste el archivo SQL completo.
 
 ### 5️⃣ Configurar Frontend
 
@@ -122,10 +131,12 @@ npm install
 
 #### b) Verificar variables de entorno
 
-Verificar que `frontend/.env.development` contenga:
+Verificar que `frontend/.env` contenga:
 ```env
 VITE_API_URL=http://localhost:8080/api
 ```
+
+Si no existe el archivo `.env`, créalo con el contenido anterior.
 
 #### c) Ejecutar
 ```bash
@@ -191,11 +202,13 @@ MODIFY COLUMN description TEXT,
 MODIFY COLUMN short_description TEXT;
 ```
 
-### ❌ Error: "VITE_API_URL is not defined"
-**Solución:** Verificar que existe `frontend/.env.development` con:
+### ❌ Error: "VITE_API_URL is not defined" o URL mal formada
+**Solución:** Verificar que existe `frontend/.env` con:
 ```
 VITE_API_URL=http://localhost:8080/api
 ```
+
+Si el archivo no existe, créalo en la carpeta `frontend/` con el contenido anterior.
 
 ---
 

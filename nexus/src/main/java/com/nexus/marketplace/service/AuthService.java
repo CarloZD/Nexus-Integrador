@@ -5,6 +5,7 @@ import com.nexus.marketplace.domain.User;
 import com.nexus.marketplace.dto.auth.JwtResponse;
 import com.nexus.marketplace.dto.auth.LoginRequest;
 import com.nexus.marketplace.dto.auth.RegisterRequest;
+import com.nexus.marketplace.dto.user.UserDTO;
 import com.nexus.marketplace.repository.UserRepository;
 import com.nexus.marketplace.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
