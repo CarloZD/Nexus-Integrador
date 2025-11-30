@@ -4,6 +4,7 @@ import Navbar from './components/common/Navbar';
 import Catalog from './pages/Catalog';
 import GameDetail from './pages/GameDetail';
 import Profile from './pages/Profile';
+import Cart from './pages/Cart';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
 // Componente para proteger rutas que requieren autenticación

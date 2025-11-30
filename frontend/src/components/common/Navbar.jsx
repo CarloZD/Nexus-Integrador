@@ -1,6 +1,8 @@
-import { useState } from 'react';
+// frontend/src/components/common/Navbar.jsx
+import { useState, useEffect } from 'react';
 import { User, ShoppingCart, LogIn, UserPlus, LogOut, Heart, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../hooks/useCart';
 import LoginModal from '../auth/LoginModal';
 import RegisterModal from '../auth/RegisterModal';
 
@@ -8,9 +10,18 @@ export default function Navbar() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const { isAuthenticated, getCurrentUser, logout } = useAuth();
+  const { getItemCount, loadCart } = useCart();
   
   const user = getCurrentUser();
   const isLoggedIn = isAuthenticated();
+  const cartCount = getItemCount();
+
+  // Cargar carrito cuando el usuario inicia sesión
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadCart();
+    }
+  }, [isLoggedIn]);
 
   const handleSwitchToRegister = () => {
     setShowLoginModal(false);
@@ -66,13 +77,6 @@ export default function Navbar() {
                       Admin
                     </button>
                   )}
-                  
-                  <button
-                    onClick={() => window.location.href = '/cart'}
-                    className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                  >
-                    Carrito
-                  </button>
                 </>
               )}
             </div>
@@ -92,7 +96,7 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  {/* Quick Actions */}
+                  {/* Wishlist */}
                   <button
                     onClick={() => window.location.href = '/profile'}
                     className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -101,12 +105,18 @@ export default function Navbar() {
                     <Heart size={20} />
                   </button>
 
+                  {/* Cart con contador */}
                   <button
                     onClick={() => window.location.href = '/cart'}
-                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors relative"
+                    className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                     title="Carrito"
                   >
                     <ShoppingCart size={20} />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    )}
                   </button>
 
                   <button
