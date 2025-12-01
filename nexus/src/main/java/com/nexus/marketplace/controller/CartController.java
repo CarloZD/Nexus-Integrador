@@ -1,6 +1,7 @@
 package com.nexus.marketplace.controller;
 
 import com.nexus.marketplace.dto.cart.*;
+import com.nexus.marketplace.exception.UnauthorizedException;
 import com.nexus.marketplace.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,6 +27,9 @@ public class CartController {
     @GetMapping
     @Operation(summary = "Obtener carrito del usuario", description = "Retorna el carrito actual del usuario autenticado")
     public ResponseEntity<CartDTO> getCart(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            throw new UnauthorizedException("Usuario no autenticado");
+        }
         String email = authentication.getName();
         CartDTO cart = cartService.getOrCreateCart(email);
         return ResponseEntity.ok(cart);
@@ -36,6 +40,9 @@ public class CartController {
     public ResponseEntity<CartDTO> addToCart(
             @RequestBody AddToCartRequest request,
             Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            throw new UnauthorizedException("Usuario no autenticado");
+        }
         String email = authentication.getName();
         CartDTO cart = cartService.addToCart(email, request.getGameId(), request.getQuantity());
         return ResponseEntity.ok(cart);

@@ -96,7 +96,7 @@ export default function Navbar() {
                   </button>
                   
                   {/* Botón Admin - solo visible para ADMIN */}
-                  {user?.role === 'ADMIN' && (
+                  {user?.role && user.role === 'ADMIN' && (
                     <button
                       onClick={() => handleNavigate('/admin')}
                       className="flex items-center gap-2 text-purple-700 hover:text-purple-900 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-purple-50"
@@ -116,22 +116,13 @@ export default function Navbar() {
                   {/* User Info */}
                   <div className="hidden lg:flex items-center space-x-2 text-sm text-gray-700">
                     <User size={18} />
-                    <span className="font-medium">{user?.username}</span>
-                    {user?.role === 'ADMIN' && (
+                    <span className="font-medium">{user?.username || 'Usuario'}</span>
+                    {user?.role && user.role === 'ADMIN' && (
                       <span className="ml-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
                         ADMIN
                       </span>
                     )}
                   </div>
-
-                  {/* Wishlist/Favoritos */}
-                  <button
-                    onClick={() => handleNavigate('/profile')}
-                    className="p-2 text-gray-600 hover:text-red-500 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Favoritos"
-                  >
-                    <Heart size={20} />
-                  </button>
 
                   {/* Cart con contador */}
                   <button
@@ -219,7 +210,7 @@ export default function Navbar() {
                 >
                   🛒 Carrito {cartCount > 0 && `(${cartCount})`}
                 </button>
-                {user?.role === 'ADMIN' && (
+                {user?.role && user.role === 'ADMIN' && (
                   <button
                     onClick={() => handleNavigate('/admin')}
                     className="block w-full text-left px-3 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md text-sm font-medium"

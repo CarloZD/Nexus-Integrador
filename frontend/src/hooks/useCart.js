@@ -19,12 +19,19 @@ export const useCart = () => {
     try {
       setLoading(true);
       const data = await cartApi.getCart();
-      setCart(data);
+      // Si el carrito está vacío, inicializar con estructura vacía
+      setCart(data || { items: [], total: 0, itemCount: 0 });
     } catch (error) {
       console.error('Error loading cart:', error);
-      // No mostrar error si no está autenticado
-      if (error.response?.status !== 401) {
+      // Si el error es 400, 401, 404 o el usuario no está autenticado, inicializar vacío sin mostrar error
+      const status = error.response?.status;
+      if (status === 400 || status === 401 || status === 404) {
+        // Error 400 puede ser por autenticación inválida, 401 es no autenticado, 404 es no encontrado
+        setCart({ items: [], total: 0, itemCount: 0 });
+      } else {
+        // Solo mostrar error para otros casos (500, etc.)
         toast.error('Error al cargar el carrito');
+        setCart({ items: [], total: 0, itemCount: 0 });
       }
     } finally {
       setLoading(false);
