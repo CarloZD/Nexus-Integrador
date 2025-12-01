@@ -32,133 +32,265 @@ cd Nexus-Integrador
 ### 2️⃣ Configurar Base de Datos
 
 **Opción A - Importar desde archivo SQL (RECOMENDADO):**
-1. Abrir MySQL Workbench o cliente MySQL
-2. Crear nueva conexión (localhost:3306)
-3. Ejecutar el archivo SQL completo:
-   - Desde MySQL Workbench: File → Open SQL Script → Seleccionar `nexus.sql`
-   - Desde terminal:
 ```bash
-mysql -u root -p < ruta/al/archivo/nexus.sql
-```
-   O si el archivo está en `C:\Users\carlo\OneDrive\Desktop\nexus.sql`:
-```bash
-mysql -u root -p < "C:\Users\carlo\OneDrive\Desktop\nexus.sql"
+mysql -u root -p < nexusintegrator.sql
 ```
 
 **Opción B - Crear base de datos vacía:**
-1. Abrir MySQL Workbench
-2. Crear nueva conexión (localhost:3306)
-3. Ejecutar estos comandos:
-
 ```sql
 CREATE DATABASE nexus_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE nexus_db;
 ```
 
-**Opción C - Desde terminal:**
+### 3️⃣ Ejecutar Script de Nuevas Tablas
+
+Después de crear la base de datos, ejecuta el script para biblioteca y pagos:
 ```bash
-mysql -u root -p
-```
-Luego ejecutar:
-```sql
-CREATE DATABASE nexus_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-exit;
+mysql -u root -p nexus_db < nexus/src/main/resources/db/migration/V2__add_library_and_payments.sql
 ```
 
-### 3️⃣ Configurar Backend
-
-#### a) Configurar credenciales de MySQL
+### 4️⃣ Configurar Backend
 
 Editar `nexus/src/main/resources/application.properties`:
-
 ```properties
-# Cambiar estas líneas con tus credenciales de MySQL
 spring.datasource.url=jdbc:mysql://localhost:3306/nexus_db?useSSL=false&serverTimezone=UTC
 spring.datasource.username=root
 spring.datasource.password=TU_PASSWORD_DE_MYSQL
 ```
 
-#### b) Instalar dependencias y ejecutar
+Ejecutar:
 ```bash
 cd nexus
 ./mvnw clean install
 ./mvnw spring-boot:run
 ```
-
 **En Windows:** usar `mvnw.cmd` en lugar de `./mvnw`
-
-El backend estará corriendo en `http://localhost:8080`
-
-⚠️ **IMPORTANTE:** Si usaste la Opción A del paso 2 (importar desde archivo SQL), la base de datos ya tiene todas las tablas y datos. Si usaste las Opciones B o C, necesitas importar los datos.
-
-### 4️⃣ Importar Juegos a la Base de Datos ⚡ PASO CRÍTICO
-
-**Este paso es OBLIGATORIO solo si creaste la base de datos vacía (Opciones B o C del paso 2).**
-
-Si ya importaste el archivo `nexus.sql` completo, puedes saltar este paso.
-
-**Opción A - Importar desde archivo SQL completo (RECOMENDADO):**
-```bash
-mysql -u root -p < "C:\Users\carlo\OneDrive\Desktop\nexus.sql"
-```
-O desde MySQL Workbench: File → Open SQL Script → Seleccionar `nexus.sql` y ejecutar.
-
-**Opción B - Usando el endpoint de importación (puede fallar):**
-```bash
-curl -X POST http://localhost:8080/api/games/import-steam
-```
-⚠️ Este método usa la API de RAWG y puede fallar. Si falla, usar Opción A.
-
-**Verificar que se importaron:**
-```bash
-curl http://localhost:8080/api/games
-```
-Deberías ver un JSON con array de juegos (no vacío `[]`).
-
-O desde MySQL:
-```bash
-mysql -u root -p -e "USE nexus_db; SELECT COUNT(*) FROM games;"
-```
-Debería mostrar aproximadamente 40 juegos si usaste el archivo SQL completo.
 
 ### 5️⃣ Configurar Frontend
 
-#### a) Instalar dependencias
 ```bash
 cd frontend
 npm install
-```
-
-#### b) Verificar variables de entorno
-
-Verificar que `frontend/.env` contenga:
-```env
-VITE_API_URL=http://localhost:8080/api
-```
-
-Si no existe el archivo `.env`, créalo con el contenido anterior.
-
-#### c) Ejecutar
-```bash
 npm run dev
 ```
 
-El frontend estará corriendo en `http://localhost:5173`
+---
+
+## 🌐 URLs del Proyecto
+
+| Servicio | URL |
+|----------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8080/api |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| MySQL | localhost:3306 |
 
 ---
 
-## ✅ Verificación
+## 📚 API Endpoints
 
-### Backend funcionando:
-```bash
-curl http://localhost:8080/api/games
-# Debe devolver JSON con array de juegos
+### 🔐 Autenticación
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Registrar usuario |
+| POST | `/api/auth/login` | Iniciar sesión |
+| GET | `/api/auth/me` | Usuario actual |
+
+### 🎮 Juegos
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/games` | Todos los juegos |
+| GET | `/api/games/featured` | Juegos destacados |
+| GET | `/api/games/category/{category}` | Por categoría |
+| GET | `/api/games/platform/{platform}` | Por plataforma |
+| GET | `/api/games/{id}` | Detalle de juego |
+| GET | `/api/games/{id}/screenshots` | Screenshots |
+
+### 🛒 Carrito
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/cart` | Ver carrito |
+| POST | `/api/cart/add` | Agregar juego |
+| PUT | `/api/cart/items/{id}` | Actualizar cantidad |
+| DELETE | `/api/cart/items/{id}` | Eliminar item |
+| DELETE | `/api/cart/clear` | Vaciar carrito |
+
+### 📦 Órdenes
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/orders/checkout` | Crear orden |
+| GET | `/api/orders/my-orders` | Mis órdenes |
+| GET | `/api/orders/{id}` | Detalle de orden |
+| POST | `/api/orders/{id}/cancel` | Cancelar orden |
+
+### 💳 Pagos
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/payments/card` | Pagar con tarjeta |
+| POST | `/api/payments/yape/generate-qr` | Generar QR Yape |
+| POST | `/api/payments/yape/confirm` | Confirmar pago Yape |
+| GET | `/api/payments/methods` | Métodos disponibles |
+
+### 📚 Biblioteca
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/library` | Mis juegos |
+| GET | `/api/library/stats` | Estadísticas |
+| GET | `/api/library/owns/{gameId}` | ¿Tengo este juego? |
+| POST | `/api/library/{gameId}/install` | Instalar juego |
+
+### ⭐ Reviews
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/reviews/game/{gameId}` | Reviews de un juego |
+| GET | `/api/reviews/game/{gameId}/stats` | Estadísticas |
+| POST | `/api/reviews` | Crear review |
+| POST | `/api/reviews/{id}/helpful` | Marcar útil |
+
+### 💬 Comunidad
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/community/posts` | Ver posts |
+| POST | `/api/community/posts` | Crear post |
+| POST | `/api/community/posts/{id}/like` | Dar like |
+| POST | `/api/community/posts/{id}/comments` | Comentar |
+
+### ❤️ Favoritos
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/user/favorites` | Mis favoritos |
+| POST | `/api/user/favorites/{gameId}` | Agregar favorito |
+| DELETE | `/api/user/favorites/{gameId}` | Quitar favorito |
+
+---
+
+## 💳 Datos de Prueba para Pagos
+
+### Tarjetas de Prueba
+
+#### ✅ Tarjetas que APRUEBAN el pago:
+
+| Marca | Número | CVV | Vencimiento |
+|-------|--------|-----|-------------|
+| VISA | 4111 1111 1111 1111 | 123 | 12/2025 |
+| VISA | 4242 4242 4242 4242 | 456 | 06/2026 |
+| Mastercard | 5555 5555 5555 4444 | 789 | 03/2027 |
+| Mastercard | 5105 1051 0510 5100 | 321 | 09/2025 |
+| AMEX | 3782 822463 10005 | 1234 | 12/2026 |
+
+#### ❌ Tarjeta que RECHAZA el pago (para probar errores):
+| Marca | Número | CVV | Vencimiento |
+|-------|--------|-----|-------------|
+| VISA | 4000 0000 0000 0002 | 123 | 12/2025 |
+
+**Nombre del titular:** Cualquier nombre (ej: "JUAN PEREZ")
+
+### Ejemplo de pago con tarjeta:
+```json
+POST /api/payments/card
+{
+  "orderId": 1,
+  "paymentMethod": "CREDIT_CARD",
+  "cardNumber": "4111111111111111",
+  "cardHolder": "JUAN PEREZ",
+  "expiryMonth": "12",
+  "expiryYear": "2025",
+  "cvv": "123"
+}
 ```
 
-### Frontend funcionando:
-Abrir navegador en `http://localhost:5173`
-- Deberías ver el catálogo con las tarjetas de juegos
-- La barra de búsqueda debe funcionar
+---
+
+### 📱 Pago con Yape (Simulado)
+
+#### Paso 1: Generar QR
+```json
+POST /api/payments/yape/generate-qr?orderId=1
+
+Respuesta:
+{
+  "paymentCode": "PAY-A1B2C3D4",
+  "amount": 59.99,
+  "qrCodeBase64": "...",
+  "qrCodeData": "YAPE|PAY-A1B2C3D4|59.99|NEXUS_MARKETPLACE",
+  "expiresAt": "2024-12-01T15:30:00",
+  "expiresInSeconds": 900,
+  "instructions": "1. Abre tu app de Yape..."
+}
+```
+
+#### Paso 2: Confirmar pago (simula que el usuario pagó)
+```json
+POST /api/payments/yape/confirm?paymentCode=PAY-A1B2C3D4
+
+Respuesta:
+{
+  "status": "COMPLETED",
+  "message": "¡Pago con Yape confirmado! Los juegos han sido agregados a tu biblioteca."
+}
+```
+
+**Nota:** En producción, la confirmación vendría de un webhook de Yape. En este entorno de desarrollo, el usuario debe llamar manualmente al endpoint de confirmación.
+
+---
+
+## 🔄 Flujo Completo de Compra
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    FLUJO DE COMPRA                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. AGREGAR AL CARRITO                                          │
+│     POST /api/cart/add { gameId: 1, quantity: 1 }               │
+│                          ↓                                       │
+│  2. CREAR ORDEN                                                  │
+│     POST /api/orders/checkout { paymentMethod: "PENDING" }      │
+│     → Orden creada con status: PENDING                          │
+│                          ↓                                       │
+│  3. ELEGIR MÉTODO DE PAGO                                       │
+│     ┌──────────────────┬──────────────────────┐                 │
+│     │   💳 TARJETA     │    📱 YAPE           │                 │
+│     ├──────────────────┼──────────────────────┤                 │
+│     │ POST /payments/  │ POST /payments/yape/ │                 │
+│     │ card             │ generate-qr          │                 │
+│     │                  │        ↓             │                 │
+│     │                  │ Usuario escanea QR   │                 │
+│     │                  │        ↓             │                 │
+│     │                  │ POST /payments/yape/ │                 │
+│     │                  │ confirm              │                 │
+│     └────────┬─────────┴──────────┬───────────┘                 │
+│              ↓                    ↓                              │
+│  4. PAGO EXITOSO                                                 │
+│     → Orden status: COMPLETED                                    │
+│     → Juegos agregados a BIBLIOTECA                             │
+│                          ↓                                       │
+│  5. VER BIBLIOTECA                                              │
+│     GET /api/library                                            │
+│     → Lista de juegos adquiridos                                │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔑 Usuarios de Prueba
+
+| Usuario | Email | Password | Rol |
+|---------|-------|----------|-----|
+| carlos | carlosenriqueruizllanterhuay@gmail.com | (ver BD) | ADMIN |
+| usuario1 | correo@prueba.com | (ver BD) | USER |
+
+Para crear un nuevo usuario:
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@nexus.com",
+    "username": "testuser",
+    "password": "Test123!",
+    "fullName": "Usuario de Prueba"
+  }'
+```
 
 ---
 
@@ -166,10 +298,6 @@ Abrir navegador en `http://localhost:5173`
 
 ### ❌ Error: "Access denied for user 'root'@'localhost'"
 **Solución:** Cambiar las credenciales en `application.properties`
-```properties
-spring.datasource.username=TU_USUARIO
-spring.datasource.password=TU_PASSWORD
-```
 
 ### ❌ Error: "Unknown database 'nexus_db'"
 **Solución:** Crear la base de datos:
@@ -177,38 +305,19 @@ spring.datasource.password=TU_PASSWORD
 CREATE DATABASE nexus_db;
 ```
 
+### ❌ Error: "Table 'user_library' doesn't exist"
+**Solución:** Ejecutar el script de migración:
+```bash
+mysql -u root -p nexus_db < nexus/src/main/resources/db/migration/V2__add_library_and_payments.sql
+```
+
 ### ❌ Error: "Port 8080 is already in use"
-**Solución:** Matar el proceso que usa el puerto:
+**Solución:** 
 ```bash
 # Windows
 netstat -ano | findstr :8080
 taskkill /PID <PID> /F
-
-# Linux/Mac
-lsof -ti:8080 | xargs kill -9
 ```
-
-### ❌ Frontend muestra "No se encontraron juegos"
-**Solución:** Importar juegos a la base de datos (ver paso 4)
-
-### ❌ Error: "Data too long for column 'categories'"
-**Solución:** Ejecutar este SQL:
-```sql
-USE nexus_db;
-ALTER TABLE games 
-MODIFY COLUMN categories TEXT,
-MODIFY COLUMN genres TEXT,
-MODIFY COLUMN description TEXT,
-MODIFY COLUMN short_description TEXT;
-```
-
-### ❌ Error: "VITE_API_URL is not defined" o URL mal formada
-**Solución:** Verificar que existe `frontend/.env` con:
-```
-VITE_API_URL=http://localhost:8080/api
-```
-
-Si el archivo no existe, créalo en la carpeta `frontend/` con el contenido anterior.
 
 ---
 
@@ -216,130 +325,39 @@ Si el archivo no existe, créalo en la carpeta `frontend/` con el contenido ante
 
 ```
 Nexus-Integrador/
-├── nexus/                    # Backend (Spring Boot)
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/.../
-│   │   │   │   ├── controller/
-│   │   │   │   ├── domain/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── repository/
-│   │   │   │   ├── service/
-│   │   │   │   └── security/
-│   │   │   └── resources/
-│   │   │       └── application.properties
-│   │   └── test/
-│   └── pom.xml
+├── nexus/                          # Backend (Spring Boot)
+│   └── src/main/java/.../
+│       ├── controller/             # REST Controllers
+│       │   ├── AuthController
+│       │   ├── GameController
+│       │   ├── CartController
+│       │   ├── OrderController
+│       │   ├── PaymentController   # 💳 Pagos
+│       │   ├── LibraryController   # 📚 Biblioteca
+│       │   ├── ReviewController
+│       │   └── CommunityController
+│       ├── domain/                 # Entidades JPA
+│       ├── dto/                    # Data Transfer Objects
+│       ├── repository/             # JPA Repositories
+│       ├── service/                # Lógica de negocio
+│       └── security/               # JWT + Spring Security
 │
-└── frontend/                 # Frontend (React + Vite)
-    ├── src/
-    │   ├── api/
-    │   ├── components/
-    │   ├── pages/
-    │   └── styles/
-    ├── .env.development
-    └── package.json
+└── frontend/                       # Frontend (React + Vite)
+    └── src/
+        ├── api/                    # Axios config
+        ├── components/             # Componentes React
+        ├── pages/                  # Páginas
+        └── hooks/                  # Custom hooks
 ```
-
----
-
-## 🔑 Credenciales por Defecto
-
-No hay usuarios creados por defecto. Para crear uno:
-
-**Registrarse desde el frontend:**
-1. Ir a `http://localhost:5173`
-2. Hacer clic en "Registrarse" (si hay botón)
-3. O usar el endpoint de registro:
-
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@nexus.com",
-    "username": "admin",
-    "password": "admin123",
-    "fullName": "Administrador"
-  }'
-```
-
----
-
-## 🛠️ Comandos Útiles
-
-### Backend:
-```bash
-# Compilar
-./mvnw clean install
-
-# Ejecutar
-./mvnw spring-boot:run
-
-# Ejecutar tests
-./mvnw test
-
-# Limpiar y recompilar
-./mvnw clean package
-```
-
-### Frontend:
-```bash
-# Instalar dependencias
-npm install
-
-# Desarrollo
-npm run dev
-
-# Build para producción
-npm run build
-
-# Preview de producción
-npm run preview
-```
-
-### Base de Datos:
-```bash
-# Conectar a MySQL
-mysql -u root -p
-
-# Backup
-mysqldump -u root -p nexus_db > backup.sql
-
-# Restaurar
-mysql -u root -p nexus_db < backup.sql
-
-# Ver todas las tablas
-mysql -u root -p -e "USE nexus_db; SHOW TABLES;"
-```
-
----
-
-## 🌐 URLs del Proyecto
-
-- **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:8080/api
-- **Swagger UI:** http://localhost:8080/swagger-ui.html
-- **MySQL:** localhost:3306
 
 ---
 
 ## 📝 Notas Importantes
 
 1. **Siempre ejecutar el backend ANTES que el frontend**
-2. **Importar juegos después de crear la base de datos**
-3. **Verificar que MySQL esté corriendo antes de iniciar el backend**
-4. **El puerto 8080 debe estar libre para el backend**
-5. **El puerto 5173 debe estar libre para el frontend**
-
----
-
-## 🤝 Soporte
-
-Si encuentras algún problema:
-1. Verificar que todos los requisitos estén instalados
-2. Revisar los logs del backend en la consola
-3. Revisar la consola del navegador (F12) para errores del frontend
-4. Verificar que la base de datos tenga juegos (`SELECT COUNT(*) FROM games;`)
+2. **Ejecutar los scripts SQL en orden**
+3. **Los pagos son SIMULADOS** - No se conecta a pasarelas reales
+4. **El QR de Yape es simulado** - En producción se integraría con la API real de Yape
 
 ---
 
