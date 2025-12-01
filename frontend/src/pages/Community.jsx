@@ -160,11 +160,12 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
           <div className="flex items-center gap-6">
             <button 
               onClick={() => onLike(post.id)}
+              disabled={!isLoggedIn}
               className={`flex items-center gap-2 transition ${
                 post.isLikedByCurrentUser 
                   ? 'text-red-500' 
                   : 'text-gray-500 hover:text-red-500'
-              }`}
+              } ${!isLoggedIn && 'opacity-50 cursor-not-allowed'}`}
             >
               <Heart size={20} fill={post.isLikedByCurrentUser ? 'currentColor' : 'none'} />
               <span>{post.likeCount || 0}</span>
@@ -190,26 +191,58 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
   );
 }
 
-// Create Post Modal
+// Create Post Modal - COMPONENTE CORREGIDO
 function CreatePostModal({ onClose, onCreated }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!title.trim()) {
+      newErrors.title = 'El título es requerido';
+    } else if (title.trim().length < 5) {
+      newErrors.title = 'El título debe tener al menos 5 caracteres';
+    }
+    
+    if (!content.trim()) {
+      newErrors.content = 'El contenido es requerido';
+    } else if (content.trim().length < 10) {
+      newErrors.content = 'El contenido debe tener al menos 10 caracteres';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error('Completa todos los campos');
+    
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     try {
-      await axiosInstance.post('/community/posts', { title, content });
-      toast.success('¡Post creado!');
+      const response = await axiosInstance.post('/community/posts', { 
+        title: title.trim(), 
+        content: content.trim() 
+      });
+      
+      console.log('Post creado exitosamente:', response.data);
+      toast.success('¡Post creado exitosamente!');
       onCreated();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al crear post');
+      console.error('Error completo:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error al crear el post';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -220,39 +253,86 @@ function CreatePostModal({ onClose, onCreated }) {
       <div className="bg-white rounded-xl max-w-lg w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Nuevo Post</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={onClose} 
+            className="text-gray-500 hover:text-gray-700"
+            type="button"
+          >
             <X size={24} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Título *
+            </label>
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) {
+                  setErrors({...errors, title: null});
+                }
+              }}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                errors.title ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="¿De qué quieres hablar?"
+              maxLength={200}
             />
+            {errors.title && (
+              <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              {title.length}/200 caracteres
+            </p>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contenido</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contenido *
+            </label>
             <textarea
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                setContent(e.target.value);
+                if (errors.content) {
+                  setErrors({...errors, content: null});
+                }
+              }}
               rows={5}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 resize-none ${
+                errors.content ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="Escribe tu publicación..."
+              maxLength={2000}
             />
+            {errors.content && (
+              <p className="text-red-500 text-sm mt-1">{errors.content}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              {content.length}/2000 caracteres
+            </p>
           </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-            Publicar
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                Publicando...
+              </>
+            ) : (
+              <>
+                <Send size={20} />
+                Publicar
+              </>
+            )}
           </button>
         </form>
       </div>
@@ -267,11 +347,16 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
 
   const handleComment = async (e) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    if (!comment.trim()) {
+      toast.error('El comentario no puede estar vacío');
+      return;
+    }
 
     setSending(true);
     try {
-      await axiosInstance.post(`/community/posts/${post.id}/comments`, { content: comment });
+      await axiosInstance.post(`/community/posts/${post.id}/comments`, { 
+        content: comment.trim() 
+      });
       toast.success('Comentario agregado');
       setComment('');
       onUpdate();
@@ -340,7 +425,7 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
           )}
 
           {/* Add Comment */}
-          {isLoggedIn && (
+          {isLoggedIn ? (
             <form onSubmit={handleComment} className="flex gap-2">
               <input
                 type="text"
@@ -348,19 +433,23 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
                 onChange={(e) => setComment(e.target.value)}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 placeholder="Escribe un comentario..."
+                maxLength={1000}
               />
               <button
                 type="submit"
-                disabled={sending}
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                disabled={sending || !comment.trim()}
+                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
               </button>
             </form>
+          ) : (
+            <p className="text-center text-gray-500 text-sm">
+              Debes iniciar sesión para comentar
+            </p>
           )}
         </div>
       </div>
     </div>
   );
 }
-
