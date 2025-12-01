@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, ShoppingCart, LogIn, UserPlus, LogOut, Heart, Shield } from 'lucide-react';
+import { User, ShoppingCart, LogIn, UserPlus, LogOut, Heart, Shield, Gamepad2, Package, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import LoginModal from '../auth/LoginModal';
@@ -54,15 +54,40 @@ export default function Navbar() {
             </div>
 
             {/* Navigation Links */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-1">
               <button
                 onClick={() => handleNavigate('/')}
                 className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Catálogo
               </button>
+              
+              <button
+                onClick={() => handleNavigate('/community')}
+                className="flex items-center gap-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                <MessageSquare size={16} />
+                Comunidad
+              </button>
+
               {isLoggedIn && (
                 <>
+                  <button
+                    onClick={() => handleNavigate('/library')}
+                    className="flex items-center gap-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    <Gamepad2 size={16} />
+                    Biblioteca
+                  </button>
+
+                  <button
+                    onClick={() => handleNavigate('/my-orders')}
+                    className="flex items-center gap-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    <Package size={16} />
+                    Mis Órdenes
+                  </button>
+
                   <button
                     onClick={() => handleNavigate('/profile')}
                     className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -85,15 +110,15 @@ export default function Navbar() {
             </div>
 
             {/* User Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               {isLoggedIn ? (
                 <>
                   {/* User Info */}
-                  <div className="hidden md:flex items-center space-x-2 text-sm text-gray-700">
+                  <div className="hidden lg:flex items-center space-x-2 text-sm text-gray-700">
                     <User size={18} />
                     <span className="font-medium">{user?.username}</span>
                     {user?.role === 'ADMIN' && (
-                      <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
+                      <span className="ml-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
                         ADMIN
                       </span>
                     )}
@@ -102,8 +127,8 @@ export default function Navbar() {
                   {/* Wishlist/Favoritos */}
                   <button
                     onClick={() => handleNavigate('/profile')}
-                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Mi Perfil"
+                    className="p-2 text-gray-600 hover:text-red-500 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Favoritos"
                   >
                     <Heart size={20} />
                   </button>
@@ -124,7 +149,7 @@ export default function Navbar() {
 
                   <button
                     onClick={logout}
-                    className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <LogOut size={18} />
                     <span className="hidden md:inline">Salir</span>
@@ -153,16 +178,34 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile menu - opcional */}
+        {/* Mobile menu */}
         <div className="md:hidden border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1">
+            <button
+              onClick={() => handleNavigate('/')}
+              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
+            >
+              Catálogo
+            </button>
+            <button
+              onClick={() => handleNavigate('/community')}
+              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
+            >
+              Comunidad
+            </button>
             {isLoggedIn && (
               <>
                 <button
-                  onClick={() => handleNavigate('/')}
+                  onClick={() => handleNavigate('/library')}
                   className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
                 >
-                  Catálogo
+                  📚 Mi Biblioteca
+                </button>
+                <button
+                  onClick={() => handleNavigate('/my-orders')}
+                  className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
+                >
+                  📦 Mis Órdenes
                 </button>
                 <button
                   onClick={() => handleNavigate('/profile')}
@@ -174,14 +217,14 @@ export default function Navbar() {
                   onClick={() => handleNavigate('/cart')}
                   className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium"
                 >
-                  Carrito {cartCount > 0 && `(${cartCount})`}
+                  🛒 Carrito {cartCount > 0 && `(${cartCount})`}
                 </button>
                 {user?.role === 'ADMIN' && (
                   <button
                     onClick={() => handleNavigate('/admin')}
                     className="block w-full text-left px-3 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md text-sm font-medium"
                   >
-                    Panel Admin
+                    ⚙️ Panel Admin
                   </button>
                 )}
               </>

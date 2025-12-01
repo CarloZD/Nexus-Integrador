@@ -59,11 +59,31 @@ export default function Cart() {
     }
   };
 
-  const handleCheckout = () => {
-    toast.success('Funcionalidad de pago próximamente', {
-      duration: 3000,
-      icon: '🚀'
-    });
+  const handleCheckout = async () => {
+    try {
+      // Crear la orden desde el carrito
+      const response = await fetch('http://localhost:8080/api/orders/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ paymentMethod: 'PENDING' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al crear la orden');
+      }
+
+      const order = await response.json();
+      toast.success('Orden creada. Redirigiendo al pago...');
+      
+      // Navegar al checkout con el orderId
+      navigate(`/checkout?orderId=${order.id}`);
+    } catch (error) {
+      toast.error(error.message || 'Error al procesar la orden');
+    }
   };
 
   if (loading && !cart) {

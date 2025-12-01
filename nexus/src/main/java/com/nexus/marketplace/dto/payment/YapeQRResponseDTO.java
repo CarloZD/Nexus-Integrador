@@ -23,3 +23,4 @@ public class YapeQRResponseDTO {
     private String instructions;        // Instrucciones para el usuario
 }
 
+

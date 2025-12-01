@@ -25,3 +25,4 @@ public interface GameImageRepository extends JpaRepository<GameImage, Long> {
     void deleteByGameId(Long gameId);
 }
 
+

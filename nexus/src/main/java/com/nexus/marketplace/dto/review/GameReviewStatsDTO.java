@@ -18,3 +18,4 @@ public class GameReviewStatsDTO {
     private Map<Integer, Long> ratingDistribution; // {5: 100, 4: 50, 3: 20, 2: 5, 1: 2}
 }
 
+

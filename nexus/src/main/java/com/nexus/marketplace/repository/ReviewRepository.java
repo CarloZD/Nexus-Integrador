@@ -49,3 +49,4 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Object[]> getRatingDistributionByGameId(@Param("gameId") Long gameId);
 }
 
+

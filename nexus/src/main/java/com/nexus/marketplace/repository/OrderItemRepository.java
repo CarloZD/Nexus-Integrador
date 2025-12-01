@@ -15,3 +15,4 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     boolean existsByOrderUserIdAndGameId(Long userId, Long gameId);
 }
 
+

@@ -5,6 +5,10 @@ import Catalog from './pages/Catalog';
 import GameDetail from './pages/GameDetail';
 import Profile from './pages/Profile';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import MyOrders from './pages/MyOrders';
+import Library from './pages/Library';
+import Community from './pages/Community';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
 // Componente para proteger rutas que requieren autenticación
@@ -51,6 +55,7 @@ export default function App() {
           <Route path="/" element={<Catalog />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/game/:id" element={<GameDetail />} />
+          <Route path="/community" element={<Community />} />
           
           {/* Rutas protegidas - requieren login */}
           <Route 
@@ -58,6 +63,33 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Cart />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/checkout" 
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/my-orders" 
+            element={
+              <ProtectedRoute>
+                <MyOrders />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/library" 
+            element={
+              <ProtectedRoute>
+                <Library />
               </ProtectedRoute>
             } 
           />
