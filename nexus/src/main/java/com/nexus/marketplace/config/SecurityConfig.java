@@ -64,6 +64,8 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Comunidad: GET público, POST/PUT/DELETE requiere auth
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/community/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
