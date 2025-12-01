@@ -36,16 +36,43 @@ public class Game {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    // ========== CAMPOS AGREGADOS PARA SINCRONIZAR CON BD ==========
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GameCategory category = GameCategory.ACTION;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GamePlatform platform = GamePlatform.PC;
+
+    @Column(precision = 3, scale = 2)
+    private BigDecimal rating = BigDecimal.ZERO;
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
+    @Column(name = "cover_image_url", length = 500)
+    private String coverImageUrl;
+
+    @Column(nullable = false)
+    private Boolean featured = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String screenshots;
+
+    // ========== CAMPOS EXISTENTES ==========
+
     @Column(name = "header_image", length = 500)
     private String headerImage;
 
     @Column(name = "background_image", length = 500)
     private String backgroundImage;
 
-    @Column(length = 200)
+    @Column(length = 100)
     private String developer;
 
-    @Column(length = 200)
+    @Column(length = 100)
     private String publisher;
 
     @Column(name = "release_date")
@@ -73,4 +100,27 @@ public class Game {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // ========== ENUMS ==========
+
+    public enum GameCategory {
+        ACTION,
+        ADVENTURE,
+        RPG,
+        STRATEGY,
+        SPORTS,
+        SIMULATION,
+        RACING,
+        PUZZLE,
+        HORROR,
+        INDIE
+    }
+
+    public enum GamePlatform {
+        PC,
+        PS5,
+        XBOX,
+        NINTENDO_SWITCH,
+        MULTI
+    }
 }

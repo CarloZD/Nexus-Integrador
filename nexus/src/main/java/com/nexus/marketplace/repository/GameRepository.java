@@ -25,4 +25,22 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     List<Game> findLatestGames();
 
     boolean existsBySteamAppId(String steamAppId);
+
+    // Juegos destacados
+    List<Game> findByFeaturedTrueAndActiveTrue();
+
+    // Por categoría
+    List<Game> findByCategoryAndActiveTrue(Game.GameCategory category);
+
+    // Por plataforma
+    List<Game> findByPlatformAndActiveTrue(Game.GamePlatform platform);
+
+    // Por categoría y plataforma
+    List<Game> findByCategoryAndPlatformAndActiveTrue(Game.GameCategory category, Game.GamePlatform platform);
+
+    // Juegos gratuitos
+    List<Game> findByIsFreeAndActiveTrue(Boolean isFree);
+
+    // Contar por categoría
+    long countByCategoryAndActiveTrue(Game.GameCategory category);
 }

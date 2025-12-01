@@ -18,6 +18,17 @@ public class GameDTO {
     private String description;
     private String shortDescription;
     private BigDecimal price;
+    
+    // Campos agregados
+    private String category;
+    private String platform;
+    private BigDecimal rating;
+    private String imageUrl;
+    private String coverImageUrl;
+    private Boolean featured;
+    private String screenshots;
+    
+    // Campos existentes
     private String headerImage;
     private String backgroundImage;
     private String developer;

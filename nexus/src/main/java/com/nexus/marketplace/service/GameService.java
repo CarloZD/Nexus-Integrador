@@ -1,7 +1,10 @@
 package com.nexus.marketplace.service;
 
 import com.nexus.marketplace.domain.Game;
+import com.nexus.marketplace.domain.GameImage;
 import com.nexus.marketplace.dto.game.GameDTO;
+import com.nexus.marketplace.dto.game.GameImageDTO;
+import com.nexus.marketplace.repository.GameImageRepository;
 import com.nexus.marketplace.repository.GameRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,9 @@ public class GameService {
 
     @Autowired
     private GameRepository gameRepository;
+
+    @Autowired
+    private GameImageRepository gameImageRepository;
 
     @Autowired
     private RawgService rawgService;
@@ -81,6 +87,63 @@ public class GameService {
         return convertToDTO(game);
     }
 
+    /**
+     * Obtener imágenes/screenshots de un juego
+     */
+    public List<GameImageDTO> getGameImages(Long gameId) {
+        return gameImageRepository.findByGameIdOrderByDisplayOrder(gameId).stream()
+                .map(this::convertImageToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener solo screenshots de un juego
+     */
+    public List<GameImageDTO> getGameScreenshots(Long gameId) {
+        return gameImageRepository.findByGameIdAndImageType(gameId, GameImage.ImageType.SCREENSHOT).stream()
+                .map(this::convertImageToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener juegos destacados
+     */
+    public List<GameDTO> getFeaturedGames() {
+        return gameRepository.findByFeaturedTrueAndActiveTrue().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener juegos por categoría
+     */
+    public List<GameDTO> getGamesByCategory(String category) {
+        Game.GameCategory gameCategory = Game.GameCategory.valueOf(category.toUpperCase());
+        return gameRepository.findByCategoryAndActiveTrue(gameCategory).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener juegos por plataforma
+     */
+    public List<GameDTO> getGamesByPlatform(String platform) {
+        Game.GamePlatform gamePlatform = Game.GamePlatform.valueOf(platform.toUpperCase());
+        return gameRepository.findByPlatformAndActiveTrue(gamePlatform).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private GameImageDTO convertImageToDTO(GameImage image) {
+        return GameImageDTO.builder()
+                .id(image.getId())
+                .gameId(image.getGame().getId())
+                .imageUrl(image.getImageUrl())
+                .imageType(image.getImageType().name())
+                .displayOrder(image.getDisplayOrder())
+                .build();
+    }
+
     private GameDTO convertToDTO(Game game) {
         return GameDTO.builder()
                 .id(game.getId())
@@ -89,6 +152,15 @@ public class GameService {
                 .description(game.getDescription())
                 .shortDescription(game.getShortDescription())
                 .price(game.getPrice())
+                // Campos agregados
+                .category(game.getCategory() != null ? game.getCategory().name() : null)
+                .platform(game.getPlatform() != null ? game.getPlatform().name() : null)
+                .rating(game.getRating())
+                .imageUrl(game.getImageUrl())
+                .coverImageUrl(game.getCoverImageUrl())
+                .featured(game.getFeatured())
+                .screenshots(game.getScreenshots())
+                // Campos existentes
                 .headerImage(game.getHeaderImage())
                 .backgroundImage(game.getBackgroundImage())
                 .developer(game.getDeveloper())
