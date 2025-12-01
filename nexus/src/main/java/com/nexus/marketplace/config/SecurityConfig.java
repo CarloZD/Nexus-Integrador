@@ -66,6 +66,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Comunidad: GET público, POST/PUT/DELETE requiere auth
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/community/**").permitAll()
+                        // Reviews: GET público para ver reviews y estadísticas
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reviews/game/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

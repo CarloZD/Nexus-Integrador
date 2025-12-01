@@ -6,17 +6,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderSummaryDTO {
+public class OrderItemDTO {
     private Long id;
-    private String orderNumber;
-    private BigDecimal totalAmount;
-    private String status;
-    private Integer itemCount;
-    private LocalDateTime createdAt;
+    private Long gameId;
+    private String gameTitle;
+    private String gameImage;
+    private Integer quantity;
+    private BigDecimal priceAtPurchase;
+    private BigDecimal subtotal;
 }
+
