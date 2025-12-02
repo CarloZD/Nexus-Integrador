@@ -6,6 +6,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -19,16 +20,22 @@ public class WebMvcConfig implements WebMvcConfigurer {
         File uploadDirectory = new File(uploadDir);
         if (!uploadDirectory.exists()) {
             boolean created = uploadDirectory.mkdirs();
+            System.out.println("===========================================");
             System.out.println("Upload directory created: " + created);
             System.out.println("Upload directory path: " + uploadDirectory.getAbsolutePath());
+            System.out.println("===========================================");
         }
 
-        // Normalizar la ruta y agregar file: protocol
-        String absolutePath = uploadDirectory.getAbsolutePath().replace("\\", "/");
-        if (!absolutePath.endsWith("/")) {
-            absolutePath += "/";
+        // Obtener la ruta absoluta correctamente
+        String absolutePath = Paths.get(uploadDir).toAbsolutePath().toString();
+
+        // Normalizar la ruta para que funcione en Windows y Linux
+        if (!absolutePath.endsWith(File.separator)) {
+            absolutePath += File.separator;
         }
-        String uploadPath = "file:///" + absolutePath;
+
+        // Convertir a formato file:/// URL
+        String uploadPath = "file:///" + absolutePath.replace("\\", "/");
 
         System.out.println("===========================================");
         System.out.println("Upload directory exists: " + uploadDirectory.exists());
@@ -39,6 +46,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         // Configurar el handler para servir los archivos
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(uploadPath);
+                .addResourceLocations(uploadPath)
+                .setCachePeriod(3600); // Cache por 1 hora
     }
 }

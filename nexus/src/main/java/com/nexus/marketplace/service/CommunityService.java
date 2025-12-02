@@ -338,28 +338,51 @@ public class CommunityService {
 
     private String saveFile(MultipartFile file) {
         try {
+            // Crear el directorio si no existe
             Path uploadPath = Paths.get(uploadDir);
-
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
-                System.out.println("Created upload directory: " + uploadPath.toAbsolutePath());
+                System.out.println("✅ Created upload directory: " + uploadPath.toAbsolutePath());
             }
 
+            // Validar el archivo
+            if (file.isEmpty()) {
+                throw new RuntimeException("El archivo está vacío");
+            }
+
+            // Obtener extensión del archivo
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : "";
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
 
+            // Generar nombre único
             String fileName = UUID.randomUUID().toString() + extension;
-
             Path filePath = uploadPath.resolve(fileName);
+
+            // Guardar el archivo
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            System.out.println("File stored at: " + filePath.toAbsolutePath());
+            // Verificar que el archivo se guardó correctamente
+            if (!Files.exists(filePath)) {
+                throw new RuntimeException("Error al verificar el archivo guardado");
+            }
+
+            System.out.println("===========================================");
+            System.out.println("✅ File uploaded successfully!");
+            System.out.println("Original name: " + originalFilename);
+            System.out.println("Saved as: " + fileName);
+            System.out.println("Full path: " + filePath.toAbsolutePath());
+            System.out.println("File size: " + Files.size(filePath) + " bytes");
+            System.out.println("Accessible at: http://localhost:8080/uploads/" + fileName);
+            System.out.println("===========================================");
 
             return fileName;
 
         } catch (IOException e) {
+            System.err.println("❌ Error saving file: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error al guardar el archivo: " + e.getMessage());
         }
     }

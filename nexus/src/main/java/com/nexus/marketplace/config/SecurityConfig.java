@@ -62,14 +62,22 @@ public class SecurityConfig {
                         // Rutas públicas
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/games/**").permitAll()
-                        // IMPORTANTE: Permitir acceso a archivos subidos
+
+                        // ⭐ IMPORTANTE: Permitir acceso a archivos subidos
                         .requestMatchers("/uploads/**").permitAll()
+
+                        // ⭐ IMPORTANTE: Permitir acceso al debug (temporal)
+                        .requestMatchers("/api/debug/**").permitAll()
+
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                         // Comunidad: GET público, POST/PUT/DELETE requiere auth
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/community/**").permitAll()
+
                         // Reviews: GET público para ver reviews y estadísticas
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reviews/game/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

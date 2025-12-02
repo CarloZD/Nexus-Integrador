@@ -3,6 +3,29 @@ import { MessageSquare, Heart, Eye, Send, Loader2, Plus, X, User, Image as Image
 import axiosInstance from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 
+// Función helper para construir la URL completa de las imágenes
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  
+  // Si ya es una URL completa (http:// o https://), devolverla tal cual
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  // Si es una ruta relativa que empieza con /uploads/, construir la URL completa
+  if (imageUrl.startsWith('/uploads/')) {
+    return `http://localhost:8080${imageUrl}`;
+  }
+  
+  // Si es una ruta relativa sin /uploads/, también construir la URL completa
+  if (imageUrl.startsWith('/')) {
+    return `http://localhost:8080${imageUrl}`;
+  }
+  
+  // Si no empieza con /, asumir que es relativa a /uploads/
+  return `http://localhost:8080/uploads/${imageUrl}`;
+};
+
 export default function Community() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,10 +155,14 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
       {post.imageUrl && (
         <img 
-          src={post.imageUrl} 
+          src={getImageUrl(post.imageUrl)} 
           alt={post.title}
           className="w-full h-48 object-cover cursor-pointer hover:opacity-95 transition"
           onClick={() => onView(post)}
+          onError={(e) => {
+            console.error('Error cargando imagen:', post.imageUrl);
+            e.target.style.display = 'none';
+          }}
         />
       )}
       <div className="p-6">
@@ -216,6 +243,12 @@ function CreatePostModal({ onClose, onCreated }) {
         return;
       }
 
+      console.log('✅ Imagen seleccionada:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+
       setImage(file);
       
       // Crear preview
@@ -260,20 +293,31 @@ function CreatePostModal({ onClose, onCreated }) {
 
     setLoading(true);
     try {
-      // 1. Crear el post primero
+      // 1. Crear el post primero (sin imagen)
+      console.log('📝 Creando post...');
       const postResponse = await axiosInstance.post('/community/posts', { 
         title: title.trim(), 
         content: content.trim() 
       });
       
+      console.log('✅ Post creado:', postResponse.data);
       const postId = postResponse.data.id;
 
-      // 2. Si hay imagen, subirla
+      // 2. Si hay imagen, subirla después
       if (image) {
+        console.log('📸 Subiendo imagen para post:', postId);
+        
         const formData = new FormData();
         formData.append('file', image);
 
-        await axiosInstance.post(
+        // Log para verificar
+        console.log('FormData creado:', {
+          file: image.name,
+          type: image.type,
+          size: image.size
+        });
+
+        const uploadResponse = await axiosInstance.post(
           `/community/posts/${postId}/media?mediaType=IMAGE`,
           formData,
           {
@@ -282,12 +326,17 @@ function CreatePostModal({ onClose, onCreated }) {
             },
           }
         );
+
+        console.log('✅ Imagen subida:', uploadResponse.data);
       }
 
       toast.success('¡Post creado exitosamente!');
       onCreated();
     } catch (error) {
-      console.error('Error completo:', error);
+      console.error('❌ Error completo:', error);
+      console.error('❌ Response data:', error.response?.data);
+      console.error('❌ Response status:', error.response?.status);
+      
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           'Error al crear el post';
@@ -307,7 +356,7 @@ function CreatePostModal({ onClose, onCreated }) {
             className="text-gray-500 hover:text-gray-700"
             type="button"
           >
-            <X size={24} />
+            &times;
           </button>
         </div>
 
@@ -375,7 +424,9 @@ function CreatePostModal({ onClose, onCreated }) {
             {!imagePreview ? (
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <ImageIcon className="w-10 h-10 mb-2 text-gray-400" />
+                  <svg className="w-10 h-10 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                   <p className="text-sm text-gray-500">
                     <span className="font-semibold">Click para subir</span> o arrastra una imagen
                   </p>
@@ -400,7 +451,9 @@ function CreatePostModal({ onClose, onCreated }) {
                   onClick={removeImage}
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
                 >
-                  <Trash2 size={18} />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             )}
@@ -428,7 +481,6 @@ function CreatePostModal({ onClose, onCreated }) {
     </div>
   );
 }
-
 // View Post Modal
 function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
   const [comment, setComment] = useState('');
@@ -485,9 +537,13 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
           {/* Image */}
           {post.imageUrl && (
             <img 
-              src={post.imageUrl}
+              src={getImageUrl(post.imageUrl)}
               alt={post.title}
               className="w-full rounded-lg mb-4"
+              onError={(e) => {
+                console.error('Error cargando imagen:', post.imageUrl);
+                e.target.style.display = 'none';
+              }}
             />
           )}
 
@@ -550,4 +606,4 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
       </div>
     </div>
   );
-}
+} 

@@ -134,28 +134,30 @@ public class CommunityController {
     @Operation(summary = "Subir imagen/video", description = "Agrega una imagen o video a un post")
     public ResponseEntity<PostDTO> uploadMedia(
             @PathVariable Long postId,
-            @Parameter(description = "Archivo de imagen o video") @RequestParam("file") MultipartFile file,
-            @Parameter(description = "Tipo de media: IMAGE o VIDEO") @RequestParam String mediaType,
+            @Parameter(description = "Archivo de imagen o video")
+            @RequestParam("file") MultipartFile file,
+            @Parameter(description = "Tipo de media: IMAGE o VIDEO")
+            @RequestParam String mediaType,
             Authentication authentication) {
+
+        // Log para debugging
+        System.out.println("===========================================");
+        System.out.println("📥 Upload Media Request:");
+        System.out.println("Post ID: " + postId);
+        System.out.println("File name: " + file.getOriginalFilename());
+        System.out.println("File size: " + file.getSize());
+        System.out.println("Content type: " + file.getContentType());
+        System.out.println("Media type: " + mediaType);
+        System.out.println("Is empty: " + file.isEmpty());
+        System.out.println("===========================================");
+
+        if (file.isEmpty()) {
+            throw new RuntimeException("El archivo está vacío");
+        }
 
         String email = authentication.getName();
         PostDTO post = communityService.uploadMedia(postId, email, file, mediaType);
         return ResponseEntity.ok(post);
-    }
-
-    @DeleteMapping("/posts/{postId}/media/{mediaId}")
-    @Operation(summary = "Eliminar media", description = "Elimina una imagen o video de un post")
-    public ResponseEntity<Map<String, String>> deleteMedia(
-            @PathVariable Long postId,
-            @PathVariable Long mediaId,
-            Authentication authentication) {
-
-        String email = authentication.getName();
-        communityService.deleteMedia(postId, mediaId, email);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Media eliminada exitosamente");
-        return ResponseEntity.ok(response);
     }
 
     // ==================== COMMENTS ====================
