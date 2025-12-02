@@ -47,6 +47,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // Distribución de ratings (para estadísticas)
     @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.game.id = :gameId GROUP BY r.rating ORDER BY r.rating DESC")
     List<Object[]> getRatingDistributionByGameId(@Param("gameId") Long gameId);
+
+    // Últimas reseñas de toda la plataforma (ordenadas por fecha de creación descendente)
+    Page<Review> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
 
 

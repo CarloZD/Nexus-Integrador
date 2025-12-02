@@ -191,6 +191,19 @@ public class ReviewService {
     }
 
     /**
+     * Obtener las últimas reseñas de toda la plataforma
+     */
+    @Transactional(readOnly = true)
+    public Page<ReviewDTO> getLatestReviews(int page, int size, String email) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviews = reviewRepository.findAllByOrderByCreatedAtDesc(pageable);
+
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+
+        return reviews.map(review -> convertToDTO(review, currentUser));
+    }
+
+    /**
      * Obtener estadísticas de reviews de un juego
      */
     @Transactional(readOnly = true)

@@ -77,6 +77,7 @@ public class SecurityConfig {
 
                         // Reviews: GET público para ver reviews y estadísticas
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reviews/game/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reviews/latest").permitAll()
 
                         .anyRequest().authenticated()
                 )

@@ -60,6 +60,18 @@ public class ReviewController {
         return ResponseEntity.ok(stats);
     }
 
+    @GetMapping("/latest")
+    @Operation(summary = "Últimas reseñas de la comunidad", description = "Obtiene las últimas reseñas generadas en toda la plataforma")
+    public ResponseEntity<Page<ReviewDTO>> getLatestReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+
+        String email = authentication != null ? authentication.getName() : null;
+        Page<ReviewDTO> reviews = reviewService.getLatestReviews(page, size, email);
+        return ResponseEntity.ok(reviews);
+    }
+
     // ==================== AUTENTICADOS ====================
 
     @GetMapping("/game/{gameId}/my-review")
