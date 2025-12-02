@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/common/Navbar';
+import Chatbot from './components/Chatbot';
 import Catalog from './pages/Catalog';
 import GameDetail from './pages/GameDetail';
 import Profile from './pages/Profile';
@@ -47,6 +48,7 @@ export default function App() {
       <div className="min-h-screen bg-gray-50">
         <Toaster position="top-right" />
         <Navbar />
+        <Chatbot />
 
         <Routes>
           <Route path="/" element={<Catalog />} />
