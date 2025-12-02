@@ -6,30 +6,25 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class GameCreateRequest {
+public class GameUpdateRequest {
     
-    @NotBlank(message = "El título es requerido")
     @Size(max = 200, message = "El título no puede exceder 200 caracteres")
     private String title;
-
-    @NotBlank(message = "El Steam App ID es requerido")
-    private String steamAppId;
 
     @Size(max = 500, message = "La descripción corta no puede exceder 500 caracteres")
     private String shortDescription;
 
     private String description;
 
-    @NotNull(message = "El precio es requerido")
     @DecimalMin(value = "0.0", message = "El precio debe ser mayor o igual a 0")
     private BigDecimal price;
 
-    private String category = "ACTION";
-    private String platform = "PC";
-    private BigDecimal rating = BigDecimal.ZERO;
+    private String category;
+    private String platform;
+    private BigDecimal rating;
     private String imageUrl;
     private String coverImageUrl;
-    private Boolean featured = false;
+    private Boolean featured;
     private String screenshots;
     private String headerImage;
     private String backgroundImage;
@@ -38,7 +33,8 @@ public class GameCreateRequest {
     private String releaseDate;
     private String genres;
     private String categories;
-    private Boolean isFree = false;
-    private Integer stock = 0;
-    private Boolean active = true;
+    private Boolean isFree;
+    private Integer stock;
+    private Boolean active;
 }
+

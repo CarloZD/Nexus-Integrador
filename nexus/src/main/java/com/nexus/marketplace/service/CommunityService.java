@@ -305,6 +305,53 @@ public class CommunityService {
         postRepository.save(post);
     }
 
+    // ==================== MÉTODOS PARA ADMIN ====================
+
+    /**
+     * Eliminar post como admin (sin verificar propiedad)
+     */
+    @Transactional
+    public void deletePostAsAdmin(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post no encontrado"));
+        
+        post.setActive(false);
+        postRepository.save(post);
+    }
+
+    /**
+     * Eliminar comentario como admin (sin verificar propiedad)
+     */
+    @Transactional
+    public void deleteCommentAsAdmin(Long postId, Long commentId) {
+        PostComment comment = postCommentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comentario no encontrado"));
+
+        if (!comment.getPost().getId().equals(postId)) {
+            throw new RuntimeException("El comentario no pertenece a este post");
+        }
+
+        comment.setActive(false);
+        postCommentRepository.save(comment);
+
+        Post post = comment.getPost();
+        post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
+        postRepository.save(post);
+    }
+
+    /**
+     * Obtener todos los posts (incluyendo inactivos) - Solo para admin
+     */
+    @Transactional(readOnly = true)
+    public Page<PostDTO> getAllPostsIncludingInactive(int page, int size, String email) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+
+        return posts.map(post -> convertToDTO(post, currentUser));
+    }
+
     // ==================== LIKES ====================
 
     @Transactional

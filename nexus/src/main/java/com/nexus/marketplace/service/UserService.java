@@ -45,6 +45,15 @@ public class UserService {
     }
 
     /**
+     * Obtiene un usuario por email
+     */
+    public UserDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + email));
+        return convertToDTO(user);
+    }
+
+    /**
      * Activa o desactiva un usuario
      */
     @Transactional

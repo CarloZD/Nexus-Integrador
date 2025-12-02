@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Package, Activity, Shield, Loader2, 
   Edit, Trash2, ToggleLeft, ToggleRight, 
-  Search, Filter, ChevronLeft, ChevronRight 
+  Search, Filter, ChevronLeft, ChevronRight,
+  Gamepad2, MessageSquare, FileText, Plus, X
 } from 'lucide-react';
 import axiosInstance from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -10,32 +11,60 @@ import toast from 'react-hot-toast';
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [games, setGames] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [pageSize] = useState(10);
+  const [showGameModal, setShowGameModal] = useState(false);
+  const [editingGame, setEditingGame] = useState(null);
 
   useEffect(() => {
     loadData();
-  }, [currentPage]);
+  }, [currentPage, activeTab]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statsRes, usersRes] = await Promise.all([
-        axiosInstance.get('/admin/stats'),
-        axiosInstance.get(`/admin/users?page=${currentPage}&size=${pageSize}`)
-      ]);
-
-      setStats(statsRes.data);
+      const promises = [axiosInstance.get('/admin/stats')];
       
-      if (usersRes.data.content) {
-        setUsers(usersRes.data.content);
-        setTotalPages(usersRes.data.totalPages);
-      } else {
-        setUsers(usersRes.data);
+      if (activeTab === 'users') {
+        promises.push(axiosInstance.get(`/admin/users?page=${currentPage}&size=${pageSize}`));
+      } else if (activeTab === 'games') {
+        promises.push(axiosInstance.get('/admin/games'));
+      } else if (activeTab === 'posts') {
+        promises.push(axiosInstance.get(`/admin/posts?page=${currentPage}&size=${pageSize}`));
+      } else if (activeTab === 'audit') {
+        promises.push(axiosInstance.get('/admin/audit-logs?limit=100'));
+      }
+
+      const results = await Promise.all(promises);
+      setStats(results[0].data);
+
+      if (activeTab === 'users') {
+        const usersRes = results[1];
+        if (usersRes.data.content) {
+          setUsers(usersRes.data.content);
+          setTotalPages(usersRes.data.totalPages);
+        } else {
+          setUsers(usersRes.data);
+        }
+      } else if (activeTab === 'games') {
+        setGames(results[1].data);
+      } else if (activeTab === 'posts') {
+        const postsRes = results[1];
+        if (postsRes.data.content) {
+          setPosts(postsRes.data.content);
+          setTotalPages(postsRes.data.totalPages);
+        } else {
+          setPosts(postsRes.data);
+        }
+      } else if (activeTab === 'audit') {
+        setAuditLogs(results[1].data);
       }
     } catch (error) {
       console.error('Error loading admin data:', error);
@@ -199,6 +228,36 @@ export default function AdminDashboard() {
                 }`}
               >
                 Usuarios ({users.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('games')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'games'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Juegos ({games.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'posts'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Posts ({posts.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('audit')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'audit'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Auditoría
               </button>
             </div>
           </div>
@@ -373,6 +432,214 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {activeTab === 'games' && (
+          <GamesTab 
+            games={games} 
+            onRefresh={loadData}
+            onEdit={(game) => {
+              setEditingGame(game);
+              setShowGameModal(true);
+            }}
+            onDelete={async (gameId) => {
+              if (!window.confirm('¿Estás seguro de eliminar este juego?')) return;
+              try {
+                await axiosInstance.delete(`/admin/games/${gameId}`);
+                toast.success('Juego eliminado');
+                loadData();
+              } catch (error) {
+                toast.error(error.response?.data?.message || 'Error al eliminar el juego');
+              }
+            }}
+            onCreate={() => {
+              setEditingGame(null);
+              setShowGameModal(true);
+            }}
+          />
+        )}
+
+        {activeTab === 'posts' && (
+          <PostsTab 
+            posts={posts}
+            onRefresh={loadData}
+            onDelete={async (postId) => {
+              if (!window.confirm('¿Estás seguro de eliminar este post?')) return;
+              try {
+                await axiosInstance.delete(`/admin/posts/${postId}`);
+                toast.success('Post eliminado');
+                loadData();
+              } catch (error) {
+                toast.error(error.response?.data?.message || 'Error al eliminar el post');
+              }
+            }}
+          />
+        )}
+
+        {activeTab === 'audit' && (
+          <AuditTab logs={auditLogs} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Componente para la pestaña de Juegos
+function GamesTab({ games, onRefresh, onEdit, onDelete, onCreate }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-900">Gestión de Juegos</h2>
+        <button
+          onClick={onCreate}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition flex items-center gap-2"
+        >
+          <Plus size={20} />
+          Nuevo Juego
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {games.map((game) => (
+                <tr key={game.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{game.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{game.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${game.price}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      game.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {game.active ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => onEdit(game)}
+                        className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition"
+                        title="Editar"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(game.id)}
+                        className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente para la pestaña de Posts
+function PostsTab({ posts, onRefresh, onDelete }) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-gray-900">Gestión de Posts</h2>
+
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Autor</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Likes</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {posts.map((post) => (
+                <tr key={post.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{post.id}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{post.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.user?.username || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{post.likeCount || 0}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      post.active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {post.active !== false ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => onDelete(post.id)}
+                      className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente para la pestaña de Auditoría
+function AuditTab({ logs }) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-gray-900">Logs de Auditoría</h2>
+
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Detalles</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {logs.map((log) => (
+                <tr key={log.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.userId || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700 max-w-md">{log.details}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.ipAddress || 'N/A'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

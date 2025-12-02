@@ -31,4 +31,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Optional<Post> findByIdWithUser(@Param("id") Long id);
 
     List<Post> findTop5ByActiveTrueOrderByCreatedAtDesc();
+
+    Page<Post> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

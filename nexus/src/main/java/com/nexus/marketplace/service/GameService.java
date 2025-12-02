@@ -4,6 +4,9 @@ import com.nexus.marketplace.domain.Game;
 import com.nexus.marketplace.domain.GameImage;
 import com.nexus.marketplace.dto.game.GameDTO;
 import com.nexus.marketplace.dto.game.GameImageDTO;
+import com.nexus.marketplace.dto.game.GameCreateRequest;
+import com.nexus.marketplace.dto.game.GameUpdateRequest;
+import com.nexus.marketplace.exception.ResourceNotFoundException;
 import com.nexus.marketplace.repository.GameImageRepository;
 import com.nexus.marketplace.repository.GameRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,6 +135,176 @@ public class GameService {
         return gameRepository.findByPlatformAndActiveTrue(gamePlatform).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // ==================== MÉTODOS CRUD PARA ADMIN ====================
+
+    /**
+     * Obtener todos los juegos (incluyendo inactivos) - Solo para admin
+     */
+    public List<GameDTO> getAllGamesIncludingInactive() {
+        return gameRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Crear un nuevo juego
+     */
+    @Transactional
+    public GameDTO createGame(GameCreateRequest request) {
+        // Verificar que el steamAppId no exista
+        if (gameRepository.existsBySteamAppId(request.getSteamAppId())) {
+            throw new RuntimeException("Ya existe un juego con el Steam App ID: " + request.getSteamAppId());
+        }
+
+        Game game = new Game();
+        game.setSteamAppId(request.getSteamAppId());
+        game.setTitle(request.getTitle());
+        game.setShortDescription(request.getShortDescription());
+        game.setDescription(request.getDescription());
+        game.setPrice(request.getPrice());
+        game.setIsFree(request.getIsFree() != null ? request.getIsFree() : false);
+        game.setStock(request.getStock() != null ? request.getStock() : 0);
+        game.setActive(request.getActive() != null ? request.getActive() : true);
+        game.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
+        game.setRating(request.getRating() != null ? request.getRating() : BigDecimal.ZERO);
+
+        // Categoría
+        if (request.getCategory() != null) {
+            try {
+                game.setCategory(Game.GameCategory.valueOf(request.getCategory().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                game.setCategory(Game.GameCategory.ACTION);
+            }
+        }
+
+        // Plataforma
+        if (request.getPlatform() != null) {
+            try {
+                game.setPlatform(Game.GamePlatform.valueOf(request.getPlatform().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                game.setPlatform(Game.GamePlatform.PC);
+            }
+        }
+
+        // Campos opcionales
+        game.setImageUrl(request.getImageUrl());
+        game.setCoverImageUrl(request.getCoverImageUrl());
+        game.setScreenshots(request.getScreenshots());
+        game.setHeaderImage(request.getHeaderImage());
+        game.setBackgroundImage(request.getBackgroundImage());
+        game.setDeveloper(request.getDeveloper());
+        game.setPublisher(request.getPublisher());
+        game.setReleaseDate(request.getReleaseDate());
+        game.setGenres(request.getGenres());
+        game.setCategories(request.getCategories());
+
+        game = gameRepository.save(game);
+        return convertToDTO(game);
+    }
+
+    /**
+     * Actualizar un juego existente
+     */
+    @Transactional
+    public GameDTO updateGame(Long id, GameUpdateRequest request) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Juego no encontrado con ID: " + id));
+
+        // Actualizar campos si están presentes
+        if (request.getTitle() != null) {
+            game.setTitle(request.getTitle());
+        }
+        if (request.getShortDescription() != null) {
+            game.setShortDescription(request.getShortDescription());
+        }
+        if (request.getDescription() != null) {
+            game.setDescription(request.getDescription());
+        }
+        if (request.getPrice() != null) {
+            game.setPrice(request.getPrice());
+        }
+        if (request.getIsFree() != null) {
+            game.setIsFree(request.getIsFree());
+        }
+        if (request.getStock() != null) {
+            game.setStock(request.getStock());
+        }
+        if (request.getActive() != null) {
+            game.setActive(request.getActive());
+        }
+        if (request.getFeatured() != null) {
+            game.setFeatured(request.getFeatured());
+        }
+        if (request.getRating() != null) {
+            game.setRating(request.getRating());
+        }
+
+        // Categoría
+        if (request.getCategory() != null) {
+            try {
+                game.setCategory(Game.GameCategory.valueOf(request.getCategory().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                // Mantener la categoría actual si es inválida
+            }
+        }
+
+        // Plataforma
+        if (request.getPlatform() != null) {
+            try {
+                game.setPlatform(Game.GamePlatform.valueOf(request.getPlatform().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                // Mantener la plataforma actual si es inválida
+            }
+        }
+
+        // Campos opcionales
+        if (request.getImageUrl() != null) {
+            game.setImageUrl(request.getImageUrl());
+        }
+        if (request.getCoverImageUrl() != null) {
+            game.setCoverImageUrl(request.getCoverImageUrl());
+        }
+        if (request.getScreenshots() != null) {
+            game.setScreenshots(request.getScreenshots());
+        }
+        if (request.getHeaderImage() != null) {
+            game.setHeaderImage(request.getHeaderImage());
+        }
+        if (request.getBackgroundImage() != null) {
+            game.setBackgroundImage(request.getBackgroundImage());
+        }
+        if (request.getDeveloper() != null) {
+            game.setDeveloper(request.getDeveloper());
+        }
+        if (request.getPublisher() != null) {
+            game.setPublisher(request.getPublisher());
+        }
+        if (request.getReleaseDate() != null) {
+            game.setReleaseDate(request.getReleaseDate());
+        }
+        if (request.getGenres() != null) {
+            game.setGenres(request.getGenres());
+        }
+        if (request.getCategories() != null) {
+            game.setCategories(request.getCategories());
+        }
+
+        game = gameRepository.save(game);
+        return convertToDTO(game);
+    }
+
+    /**
+     * Eliminar un juego (soft delete)
+     */
+    @Transactional
+    public void deleteGame(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Juego no encontrado con ID: " + id));
+        
+        game.setActive(false);
+        gameRepository.save(game);
     }
 
     private GameImageDTO convertImageToDTO(GameImage image) {

@@ -6,6 +6,11 @@ import com.nexus.marketplace.repository.AuditLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class AuditService {
 
@@ -39,5 +44,27 @@ public class AuditService {
     public void logUserDelete(Long adminUserId, Long targetUserId, String ipAddress) {
         String details = String.format("Admin eliminó usuario %d", targetUserId);
         log(adminUserId, "USER_DELETE", details, ipAddress);
+    }
+
+    /**
+     * Obtener logs recientes de auditoría
+     */
+    public List<Map<String, Object>> getRecentLogs(int limit) {
+        List<AuditLog> logs = auditLogRepository.findTop100ByOrderByCreatedAtDesc();
+        
+        if (limit < logs.size()) {
+            logs = logs.subList(0, limit);
+        }
+        
+        return logs.stream().map(log -> {
+            Map<String, Object> logMap = new HashMap<>();
+            logMap.put("id", log.getId());
+            logMap.put("userId", log.getUserId());
+            logMap.put("action", log.getAction());
+            logMap.put("details", log.getDetails());
+            logMap.put("ipAddress", log.getIpAddress());
+            logMap.put("createdAt", log.getCreatedAt());
+            return logMap;
+        }).collect(Collectors.toList());
     }
 }
