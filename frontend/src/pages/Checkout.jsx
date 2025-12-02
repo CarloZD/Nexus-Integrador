@@ -21,11 +21,11 @@ export default function Checkout() {
 
   // Card form
   const [cardData, setCardData] = useState({
-    cardNumber: '4111111111111111',
-    cardHolder: 'JUAN PEREZ',
-    expiryMonth: '12',
-    expiryYear: '2025',
-    cvv: '123'
+    cardNumber: '',
+    cardHolder: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvv: ''
   });
 
   useEffect(() => {
@@ -217,7 +217,18 @@ export default function Checkout() {
             {/* Method Selection */}
             <div className="flex gap-4 mb-6">
               <button
-                onClick={() => { setPaymentMethod('CREDIT_CARD'); setYapeQR(null); }}
+                onClick={() => { 
+                  setPaymentMethod('CREDIT_CARD'); 
+                  setYapeQR(null);
+                  // Limpiar datos de tarjeta al cambiar método
+                  setCardData({
+                    cardNumber: '',
+                    cardHolder: '',
+                    expiryMonth: '',
+                    expiryYear: '',
+                    cvv: ''
+                  });
+                }}
                 className={`flex-1 p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition ${
                   paymentMethod === 'CREDIT_CARD' 
                     ? 'border-primary-600 bg-primary-50' 
@@ -228,7 +239,17 @@ export default function Checkout() {
                 <span className="font-medium">Tarjeta</span>
               </button>
               <button
-                onClick={() => { setPaymentMethod('YAPE'); }}
+                onClick={() => { 
+                  setPaymentMethod('YAPE');
+                  // Limpiar datos de tarjeta al cambiar método
+                  setCardData({
+                    cardNumber: '',
+                    cardHolder: '',
+                    expiryMonth: '',
+                    expiryYear: '',
+                    cvv: ''
+                  });
+                }}
                 className={`flex-1 p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition ${
                   paymentMethod === 'YAPE' 
                     ? 'border-purple-600 bg-purple-50' 
@@ -250,7 +271,8 @@ export default function Checkout() {
                     value={cardData.cardNumber}
                     onChange={(e) => setCardData({...cardData, cardNumber: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                    placeholder="4111 1111 1111 1111"
+                    placeholder="Ingresa el número de tarjeta"
+                    autoComplete="off"
                   />
                 </div>
                 <div>
@@ -260,7 +282,8 @@ export default function Checkout() {
                     value={cardData.cardHolder}
                     onChange={(e) => setCardData({...cardData, cardHolder: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                    placeholder="JUAN PEREZ"
+                    placeholder="Nombre completo del titular"
+                    autoComplete="off"
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -271,7 +294,8 @@ export default function Checkout() {
                       value={cardData.expiryMonth}
                       onChange={(e) => setCardData({...cardData, expiryMonth: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      placeholder="12"
+                      placeholder="MM"
+                      autoComplete="off"
                     />
                   </div>
                   <div>
@@ -281,7 +305,8 @@ export default function Checkout() {
                       value={cardData.expiryYear}
                       onChange={(e) => setCardData({...cardData, expiryYear: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      placeholder="2025"
+                      placeholder="AAAA"
+                      autoComplete="off"
                     />
                   </div>
                   <div>
@@ -291,7 +316,8 @@ export default function Checkout() {
                       value={cardData.cvv}
                       onChange={(e) => setCardData({...cardData, cvv: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      placeholder="123"
+                      placeholder="CVV"
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -313,10 +339,6 @@ export default function Checkout() {
                     </>
                   )}
                 </button>
-
-                <p className="text-xs text-gray-500 text-center">
-                  Datos de prueba precargados. En producción, ingresa datos reales.
-                </p>
               </div>
             )}
 
