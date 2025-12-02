@@ -128,9 +128,8 @@ export default function GameCard({ game }) {
               <span className="text-xl font-bold text-green-600">GRATIS</span>
             ) : (
               <div className="flex items-center gap-1">
-                <DollarSign size={20} className="text-primary-600" />
                 <span className="text-2xl font-bold text-primary-600">
-                  {parseFloat(game.price).toFixed(2)}
+                  S/. {parseFloat(game.price).toFixed(2)}
                 </span>
               </div>
             )}

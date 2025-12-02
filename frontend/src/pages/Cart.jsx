@@ -1,36 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '../hooks/useCart';
-import { Loader2, ShoppingCart, Trash2, Plus, Minus, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Loader2, ShoppingCart, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { cart, loading, updateQuantity, removeFromCart, clearCart, loadCart } = useCart();
+  const { cart, loading, removeFromCart, clearCart, loadCart } = useCart();
   const [processingItems, setProcessingItems] = useState(new Set());
 
   useEffect(() => {
     loadCart();
   }, []);
-
-  const handleQuantityChange = async (itemId, currentQuantity, change) => {
-    const newQuantity = currentQuantity + change;
-    if (newQuantity <= 0) return;
-
-    setProcessingItems(prev => new Set(prev).add(itemId));
-    
-    try {
-      await updateQuantity(itemId, newQuantity);
-    } catch (error) {
-      toast.error('Error al actualizar cantidad');
-    } finally {
-      setProcessingItems(prev => {
-        const next = new Set(prev);
-        next.delete(itemId);
-        return next;
-      });
-    }
-  };
 
   const handleRemoveItem = async (itemId) => {
     if (!window.confirm('¿Eliminar este juego del carrito?')) return;
@@ -171,40 +152,12 @@ export default function Cart() {
                       </h3>
 
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        {/* Controles de cantidad */}
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => handleQuantityChange(item.id, item.quantity, -1)}
-                            disabled={processingItems.has(item.id) || item.quantity <= 1}
-                            className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Disminuir cantidad"
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <span className="text-lg font-semibold w-12 text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => handleQuantityChange(item.id, item.quantity, 1)}
-                            disabled={processingItems.has(item.id)}
-                            className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Aumentar cantidad"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-
                         {/* Precio y acciones */}
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <p className="text-2xl font-bold text-primary-600">
-                              ${parseFloat(item.subtotal).toFixed(2)}
+                              S/. {parseFloat(item.subtotal).toFixed(2)}
                             </p>
-                            {item.quantity > 1 && (
-                              <p className="text-sm text-gray-500">
-                                ${parseFloat(item.price).toFixed(2)} c/u
-                              </p>
-                            )}
                           </div>
 
                           {/* Botón eliminar */}
@@ -251,7 +204,7 @@ export default function Cart() {
                   <div className="flex justify-between text-gray-700">
                     <span>Subtotal</span>
                     <span className="font-semibold">
-                      ${parseFloat(cart.total).toFixed(2)}
+                      S/. {parseFloat(cart.total).toFixed(2)}
                     </span>
                   </div>
                   
@@ -274,7 +227,7 @@ export default function Cart() {
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-gray-900">Total</span>
                       <span className="text-3xl font-bold text-primary-600">
-                        ${parseFloat(cart.total).toFixed(2)}
+                        S/. {parseFloat(cart.total).toFixed(2)}
                       </span>
                     </div>
                   </div>

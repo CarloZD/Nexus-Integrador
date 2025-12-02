@@ -21,7 +21,6 @@ export default function GameDetail() {
     const [game, setGame] = useState(null);
     const [loading, setLoading] = useState(true);
     const [addingToCart, setAddingToCart] = useState(false);
-    const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
@@ -103,14 +102,9 @@ export default function GameDetail() {
             return;
         }
 
-        if (quantity > game.stock) {
-            toast.error(`Solo hay ${game.stock} unidades disponibles`);
-            return;
-        }
-
         setAddingToCart(true);
         try {
-            await addToCart(game.id, quantity);
+            await addToCart(game.id, 1);
             setAddedToCart(true);
             setTimeout(() => {
                 setAddedToCart(false);
@@ -130,26 +124,12 @@ export default function GameDetail() {
 
         setAddingToCart(true);
         try {
-            await addToCart(game.id, quantity);
+            await addToCart(game.id, 1);
             navigate('/cart');
         } catch (error) {
             console.error('Error:', error);
         } finally {
             setAddingToCart(false);
-        }
-    };
-
-    const incrementQuantity = () => {
-        if (quantity < game.stock) {
-            setQuantity(quantity + 1);
-        } else {
-            toast.error(`Stock máximo: ${game.stock} unidades`);
-        }
-    };
-
-    const decrementQuantity = () => {
-        if (quantity > 1) {
-            setQuantity(quantity - 1);
         }
     };
 
@@ -256,7 +236,7 @@ export default function GameDetail() {
                                     <div className="text-3xl font-bold text-green-400">GRATIS</div>
                                 ) : (
                                     <div className="text-3xl font-bold text-green-400">
-                                        ${parseFloat(game.price).toFixed(2)}
+                                        S/. {parseFloat(game.price).toFixed(2)}
                                     </div>
                                 )}
                             </div>
@@ -329,46 +309,10 @@ export default function GameDetail() {
                                         <span className="text-2xl font-bold text-green-400">GRATIS</span>
                                     ) : (
                                         <span className="text-2xl font-bold text-green-400">
-                      ${parseFloat(game.price).toFixed(2)}
+                      S/. {parseFloat(game.price).toFixed(2)}
                     </span>
                                     )}
                                 </div>
-
-                                {!game.isFree && game.stock > 0 && (
-                                    <div className="mb-4">
-                                        <label className="block text-sm text-gray-300 mb-2">Cantidad</label>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={decrementQuantity}
-                                                disabled={quantity <= 1}
-                                                className="w-8 h-8 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-                                            >
-                                                -
-                                            </button>
-                                            <input
-                                                type="number"
-                                                value={quantity}
-                                                onChange={(e) => {
-                                                    const val = parseInt(e.target.value) || 1;
-                                                    if (val >= 1 && val <= game.stock) {
-                                                        setQuantity(val);
-                                                    }
-                                                }}
-                                                min="1"
-                                                max={game.stock}
-                                                className="w-16 text-center bg-gray-700 text-white rounded py-1"
-                                            />
-                                            <button
-                                                onClick={incrementQuantity}
-                                                disabled={quantity >= game.stock}
-                                                className="w-8 h-8 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                        <p className="text-xs text-gray-400 mt-1">Máximo {game.stock} unidades</p>
-                                    </div>
-                                )}
 
                                 <div className="space-y-2">
                                     <button
@@ -418,18 +362,6 @@ export default function GameDetail() {
                                         </button>
                                     )}
                                 </div>
-
-                                {game.stock > 0 ? (
-                                    <div className="mt-4 p-2 bg-green-900/30 border border-green-500 rounded text-center">
-                                        <p className="text-sm text-green-400">
-                                            ✓ En stock / {game.stock} disponibilidad
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="mt-4 p-2 bg-red-900/30 border border-red-500 rounded text-center">
-                                        <p className="text-sm text-red-400">✗ Agotado</p>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>

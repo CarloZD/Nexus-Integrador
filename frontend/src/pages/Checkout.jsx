@@ -195,9 +195,8 @@ export default function Checkout() {
                 <div key={item.id} className="flex justify-between items-center py-2 border-b">
                   <div>
                     <p className="font-medium">{item.gameTitle}</p>
-                    <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
                   </div>
-                  <p className="font-semibold">${item.subtotal?.toFixed(2)}</p>
+                  <p className="font-semibold">S/. {item.subtotal?.toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -205,7 +204,7 @@ export default function Checkout() {
             <div className="border-t pt-4">
               <div className="flex justify-between text-xl font-bold">
                 <span>Total</span>
-                <span className="text-primary-600">${order?.totalAmount?.toFixed(2)}</span>
+                <span className="text-primary-600">S/. {order?.totalAmount?.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -335,7 +334,7 @@ export default function Checkout() {
                   ) : (
                     <>
                       <CreditCard size={20} />
-                      Pagar ${order?.totalAmount?.toFixed(2)}
+                      Pagar S/. {order?.totalAmount?.toFixed(2)}
                     </>
                   )}
                 </button>
