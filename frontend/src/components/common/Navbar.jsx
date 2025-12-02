@@ -150,7 +150,7 @@ export default function Navbar() {
                    onClick={() => setShowLoginModal(true)}
                    className="text-white text-[11px] font-bold tracking-widest hover:text-purple-600 transition-colors uppercase"
                  >
-                   INICIAR SESION
+                   <span className="relative top-[1px]">INICIAR SESION</span>
                  </button>
                  <button 
                    onClick={() => setShowRegisterModal(true)}
