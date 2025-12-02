@@ -9,7 +9,6 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
   const token = localStorage.getItem('token');
   const user = getCurrentUser();
 
-  // Estados
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState(null);
   const [myReview, setMyReview] = useState(null);
@@ -149,14 +148,12 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
     setEditMode(false);
   };
 
-  // Calcular porcentaje de recomendaciones
   const recommendationPercentage = reviewStats && reviewStats.totalReviews > 0
     ? Math.round((reviewStats.positiveReviews / reviewStats.totalReviews) * 100)
     : 0;
 
   return (
     <div className="space-y-6">
-      {/* Estadísticas de reviews */}
       {reviewStats && reviewStats.totalReviews > 0 && (
         <div className="flex items-center gap-6 mb-4">
           <div className="flex items-center gap-2">
@@ -189,7 +186,6 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
         </div>
       )}
 
-      {/* Sección de publicar/editar reseña */}
       {token && userOwnsGame && (!myReview || editMode) && (
         <div className="flex gap-4">
           <div className="flex-shrink-0">
@@ -242,7 +238,6 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
         </div>
       )}
 
-      {/* Mi reseña existente */}
       {token && myReview && !editMode && (
         <div className="bg-gray-700/50 border border-purple-500 rounded-lg p-4">
           <div className="flex items-start justify-between mb-2">
@@ -304,7 +299,6 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
         </div>
       )}
 
-      {/* Mensaje si no posee el juego */}
       {token && !userOwnsGame && !myReview && (
         <div className="bg-gray-700/30 border border-gray-600 rounded-lg p-4 text-center">
           <p className="text-gray-400">
@@ -313,7 +307,6 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
         </div>
       )}
 
-      {/* Lista de reseñas */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-4">Reseñas de la comunidad</h2>
         {loadingReviews ? (

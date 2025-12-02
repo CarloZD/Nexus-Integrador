@@ -11,7 +11,6 @@ import Library from './pages/Library';
 import Community from './pages/Community';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
-// Componente para proteger rutas que requieren autenticación
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
   
@@ -22,7 +21,6 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// Componente para proteger rutas de admin
 function AdminRoute({ children }) {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
@@ -51,13 +49,10 @@ export default function App() {
         <Navbar />
 
         <Routes>
-          {/* Rutas públicas */}
           <Route path="/" element={<Catalog />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/game/:id" element={<GameDetail />} />
           <Route path="/community" element={<Community />} />
-          
-          {/* Rutas protegidas - requieren login */}
           <Route 
             path="/cart" 
             element={
@@ -103,7 +98,6 @@ export default function App() {
             } 
           />
           
-          {/* Rutas de admin - requieren rol ADMIN */}
           <Route 
             path="/admin" 
             element={
@@ -113,7 +107,6 @@ export default function App() {
             } 
           />
           
-          {/* Ruta 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
