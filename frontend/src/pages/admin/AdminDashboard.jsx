@@ -800,6 +800,39 @@ function GameModal({ game, onClose, onSave }) {
     }));
   };
 
+  const handleFetchSteamData = async () => {
+    if (!formData.steamAppId) {
+      toast.error('Por favor ingresa un Steam App ID');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Intentar obtener datos de Steam usando el App ID
+      // Nota: Esto requiere una API de Steam o usar un servicio proxy
+      // Por ahora, solo pre-llenamos las URLs de imagen comunes
+      const appId = formData.steamAppId;
+      
+      // URLs comunes de Steam para imágenes
+      const headerImage = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`;
+      const coverImage = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
+      
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: headerImage,
+        coverImageUrl: coverImage,
+        headerImage: headerImage
+      }));
+      
+      toast.success('URLs de imagen pre-llenadas. Verifica que funcionen correctamente.');
+    } catch (error) {
+      console.error('Error fetching Steam data:', error);
+      toast.error('No se pudo obtener información automática. Completa los campos manualmente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -835,15 +868,32 @@ function GameModal({ game, onClose, onSave }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Steam App ID *
               </label>
-              <input
-                type="text"
-                name="steamAppId"
-                value={formData.steamAppId}
-                onChange={handleChange}
-                required={!game}
-                disabled={!!game}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="steamAppId"
+                  value={formData.steamAppId}
+                  onChange={handleChange}
+                  required={!game}
+                  disabled={!!game}
+                  placeholder="Ej: 730 (CS:GO), 271590 (GTA V)"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                />
+                {!game && (
+                  <button
+                    type="button"
+                    onClick={handleFetchSteamData}
+                    disabled={!formData.steamAppId || loading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    title="Buscar información del juego en Steam"
+                  >
+                    Buscar
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                💡 Encuentra el Steam App ID en la URL de Steam: store.steampowered.com/app/<strong>NUMERO</strong>/
+              </p>
             </div>
 
             <div>
@@ -935,13 +985,31 @@ function GameModal({ game, onClose, onSave }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL de Imagen
+                URL de Imagen (Header/Cover)
               </label>
               <input
                 type="url"
                 name="imageUrl"
                 value={formData.imageUrl}
                 onChange={handleChange}
+                placeholder="https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                💡 Usa imágenes de Steam: cdn.akamai.steamstatic.com/steam/apps/<strong>APP_ID</strong>/header.jpg
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL de Imagen de Portada (Opcional)
+              </label>
+              <input
+                type="url"
+                name="coverImageUrl"
+                value={formData.coverImageUrl}
+                onChange={handleChange}
+                placeholder="https://cdn.akamai.steamstatic.com/steam/apps/730/library_600x900.jpg"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
