@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, ShoppingCart, Heart, Calendar, User, Building, DollarSign,
     Loader2, CheckCircle, Package, ThumbsUp, ThumbsDown, Star,
-    Users, Globe, Gamepad2, MessageSquare
+    Users, Globe, Gamepad2, MessageSquare, Library
 } from 'lucide-react';
 import { gameApi } from '../api/gameApi';
 import { useCart } from '../hooks/useCart';
@@ -231,41 +231,58 @@ export default function GameDetail() {
 
                         {/* Precio y botón de compra */}
                         <div className="flex-shrink-0 text-right">
-                            <div className="mb-4">
-                                {game.isFree ? (
-                                    <div className="text-3xl font-bold text-green-400">GRATIS</div>
-                                ) : (
-                                    <div className="text-3xl font-bold text-green-400">
-                                        S/. {parseFloat(game.price).toFixed(2)}
+                            {userOwnsGame ? (
+                                <div className="mb-4">
+                                    <div className="text-lg font-semibold text-green-400 mb-3">
+                                        ✓ Ya tienes este juego
                                     </div>
-                                )}
-                            </div>
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={addingToCart || game.stock <= 0 || addedToCart}
-                                className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-                                    addedToCart
-                                        ? 'bg-green-600 text-white'
-                                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                                {addingToCart ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={18} />
-                                        Agregando...
-                                    </>
-                                ) : addedToCart ? (
-                                    <>
-                                        <CheckCircle size={18} />
-                                        ¡Agregado!
-                                    </>
-                                ) : (
-                                    <>
-                                        <ShoppingCart size={18} />
-                                        Agregar al carrito
-                                    </>
-                                )}
-                            </button>
+                                    <button
+                                        onClick={() => navigate('/library')}
+                                        className="px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
+                                    >
+                                        <Library size={18} />
+                                        Ver en biblioteca
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mb-4">
+                                        {game.isFree ? (
+                                            <div className="text-3xl font-bold text-green-400">GRATIS</div>
+                                        ) : (
+                                            <div className="text-3xl font-bold text-green-400">
+                                                S/. {parseFloat(game.price).toFixed(2)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={handleAddToCart}
+                                        disabled={addingToCart || game.stock <= 0 || addedToCart}
+                                        className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                                            addedToCart
+                                                ? 'bg-green-600 text-white'
+                                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    >
+                                        {addingToCart ? (
+                                            <>
+                                                <Loader2 className="animate-spin" size={18} />
+                                                Agregando...
+                                            </>
+                                        ) : addedToCart ? (
+                                            <>
+                                                <CheckCircle size={18} />
+                                                ¡Agregado!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShoppingCart size={18} />
+                                                Agregar al carrito
+                                            </>
+                                        )}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -315,37 +332,49 @@ export default function GameDetail() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <button
-                                        onClick={handleAddToCart}
-                                        disabled={addingToCart || game.stock <= 0 || addedToCart}
-                                        className={`w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                                            addedToCart
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                                        } disabled:opacity-50`}
-                                    >
-                                        {addingToCart ? (
-                                            <Loader2 className="animate-spin" size={18} />
-                                        ) : addedToCart ? (
-                                            <>
-                                                <CheckCircle size={18} />
-                                                Agregado
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ShoppingCart size={18} />
-                                                Agregar al carrito
-                                            </>
-                                        )}
-                                    </button>
+                                    {userOwnsGame ? (
+                                        <button
+                                            onClick={() => navigate('/library')}
+                                            className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
+                                        >
+                                            <Library size={18} />
+                                            Ver en biblioteca
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={handleAddToCart}
+                                                disabled={addingToCart || game.stock <= 0 || addedToCart}
+                                                className={`w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                                                    addedToCart
+                                                        ? 'bg-green-600 text-white'
+                                                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                                                } disabled:opacity-50`}
+                                            >
+                                                {addingToCart ? (
+                                                    <Loader2 className="animate-spin" size={18} />
+                                                ) : addedToCart ? (
+                                                    <>
+                                                        <CheckCircle size={18} />
+                                                        Agregado
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ShoppingCart size={18} />
+                                                        Agregar al carrito
+                                                    </>
+                                                )}
+                                            </button>
 
-                                    <button
-                                        onClick={handleBuyNow}
-                                        disabled={addingToCart || game.stock <= 0}
-                                        className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
-                                    >
-                                        Comprar ahora
-                                    </button>
+                                            <button
+                                                onClick={handleBuyNow}
+                                                disabled={addingToCart || game.stock <= 0}
+                                                className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                                            >
+                                                Comprar ahora
+                                            </button>
+                                        </>
+                                    )}
 
                                     {token && (
                                         <button

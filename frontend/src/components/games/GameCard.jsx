@@ -1,32 +1,36 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, DollarSign, Heart } from 'lucide-react';
+import { ShoppingCart, Heart, Gamepad2 } from 'lucide-react';
+import axiosInstance from '../../api/axiosConfig';
 
 export default function GameCard({ game }) {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [userOwnsGame, setUserOwnsGame] = useState(false);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem('token');
 
   useEffect(() => {
     if (token) {
       checkFavorite();
+      checkGameOwnership();
     }
   }, [game.id]);
 
   const checkFavorite = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/user/favorites/${game.id}/check`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      const data = await response.json();
-      setIsFavorite(data.isFavorite);
+      const response = await axiosInstance.get(`/user/favorites/${game.id}/check`);
+      setIsFavorite(response.data.isFavorite);
     } catch (error) {
       console.error('Error checking favorite:', error);
+    }
+  };
+
+  const checkGameOwnership = async () => {
+    try {
+      const response = await axiosInstance.get(`/library/owns/${game.id}`);
+      setUserOwnsGame(response.data.owns);
+    } catch (error) {
+      console.error('Error checking game ownership:', error);
+      setUserOwnsGame(false);
     }
   };
 
@@ -41,20 +45,11 @@ export default function GameCard({ game }) {
 
     setLoading(true);
     try {
-      const url = `http://localhost:8080/api/user/favorites/${game.id}`;
+      const url = `/user/favorites/${game.id}`;
       const method = isFavorite ? 'DELETE' : 'POST';
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        setIsFavorite(!isFavorite);
-      }
+      await axiosInstance({ method, url });
+      setIsFavorite(!isFavorite);
     } catch (error) {
       console.error('Error toggling favorite:', error);
     } finally {
@@ -64,6 +59,11 @@ export default function GameCard({ game }) {
 
   const handleCardClick = () => {
     window.location.href = `/game/${game.id}`;
+  };
+
+  const handleViewInLibrary = (e) => {
+    e.stopPropagation();
+    window.location.href = '/library';
   };
 
   return (
@@ -135,16 +135,26 @@ export default function GameCard({ game }) {
             )}
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCardClick();
-            }}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-          >
-            <ShoppingCart size={18} />
-            Ver
-          </button>
+          {userOwnsGame ? (
+            <button
+              onClick={handleViewInLibrary}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <Gamepad2 size={18} />
+              Ver en biblioteca
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCardClick();
+              }}
+              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
+            >
+              <ShoppingCart size={18} />
+              Ver
+            </button>
+          )}
         </div>
       </div>
     </div>
