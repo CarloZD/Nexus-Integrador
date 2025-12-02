@@ -14,7 +14,7 @@ export const useAuth = () => {
       const response = await axiosInstance.post('/auth/login', credentials);
       const { token, ...user } = response.data;
       
-      // Guardar en localStorage
+      // Guardar en localStorage (incluyendo avatarUrl si existe)
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
@@ -43,7 +43,7 @@ export const useAuth = () => {
       const response = await axiosInstance.post('/auth/register', userData);
       const { token, ...user } = response.data;
       
-      // Guardar en localStorage
+      // Guardar en localStorage (incluyendo avatarUrl si existe)
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       

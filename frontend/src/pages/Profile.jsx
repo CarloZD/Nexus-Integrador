@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import axiosInstance from '../api/axiosConfig';
 import { 
   Loader2, User, Mail, Calendar, Shield, 
-  ShoppingBag, Heart, Edit2, Lock, Save, X 
+  ShoppingBag, Heart, Edit2, Lock, Save, X, Upload, Camera 
 } from 'lucide-react';
 
 export default function Profile() {
@@ -24,6 +24,30 @@ export default function Profile() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Función helper para construir la URL completa de las imágenes
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // Si ya es una URL completa (http:// o https://), devolverla tal cual
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    
+    // Si es una ruta relativa que empieza con /uploads/, construir la URL completa
+    if (imageUrl.startsWith('/uploads/')) {
+      return `http://localhost:8080${imageUrl}`;
+    }
+    
+    // Si es una ruta relativa sin /uploads/, también construir la URL completa
+    if (imageUrl.startsWith('/')) {
+      return `http://localhost:8080${imageUrl}`;
+    }
+    
+    // Si no empieza con /, asumir que es relativa a /uploads/
+    return `http://localhost:8080/uploads/${imageUrl}`;
+  };
 
   useEffect(() => {
     loadProfile();
@@ -72,6 +96,7 @@ export default function Profile() {
       const user = JSON.parse(localStorage.getItem('user'));
       user.username = response.data.username;
       user.fullName = response.data.fullName;
+      user.avatarUrl = response.data.avatarUrl;
       localStorage.setItem('user', JSON.stringify(user));
       
       setEditMode(false);
@@ -122,6 +147,51 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo se permiten imágenes');
+      return;
+    }
+
+    // Validar tamaño (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen no debe superar 5MB');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axiosInstance.post('/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setProfile(response.data);
+      
+      // Actualizar localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      user.avatarUrl = response.data.avatarUrl;
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      toast.success('Foto de perfil actualizada');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error(error.response?.data?.message || 'Error al subir la foto de perfil');
+    } finally {
+      setUploadingAvatar(false);
+      // Limpiar el input
+      e.target.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -157,8 +227,40 @@ export default function Profile() {
           <div className="-mt-16 px-8 pb-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-24 h-24 rounded-2xl bg-white shadow-lg flex items-center justify-center">
-                  <User className="text-primary-600" size={40} />
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-2xl bg-white shadow-lg overflow-hidden flex items-center justify-center">
+                    {profile.avatarUrl ? (
+                      <img
+                        src={getImageUrl(profile.avatarUrl)}
+                        alt={profile.fullName || profile.username}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-full h-full flex items-center justify-center ${profile.avatarUrl ? 'hidden' : ''}`}
+                      style={{ display: profile.avatarUrl ? 'none' : 'flex' }}
+                    >
+                      <User className="text-primary-600" size={40} />
+                    </div>
+                  </div>
+                  <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-2xl flex items-center justify-center cursor-pointer transition-opacity">
+                    {uploadingAvatar ? (
+                      <Loader2 className="animate-spin text-white" size={24} />
+                    ) : (
+                      <Camera className="text-white" size={24} />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={uploadingAvatar}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">

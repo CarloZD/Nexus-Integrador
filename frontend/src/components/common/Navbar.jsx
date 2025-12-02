@@ -115,7 +115,23 @@ export default function Navbar() {
                 <>
                   {/* User Info */}
                   <div className="hidden lg:flex items-center space-x-2 text-sm text-gray-700">
-                    <User size={18} />
+                    {user?.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `http://localhost:8080${user.avatarUrl}`}
+                        alt={user?.username || 'Usuario'}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-primary-200"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center ${user?.avatarUrl ? 'hidden' : ''}`}
+                      style={{ display: user?.avatarUrl ? 'none' : 'flex' }}
+                    >
+                      <User size={18} className="text-primary-600" />
+                    </div>
                     <span className="font-medium">{user?.username || 'Usuario'}</span>
                     {user?.role && user.role === 'ADMIN' && (
                       <span className="ml-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">

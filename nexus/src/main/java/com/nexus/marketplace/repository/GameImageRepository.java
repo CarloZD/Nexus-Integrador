@@ -26,3 +26,5 @@ public interface GameImageRepository extends JpaRepository<GameImage, Long> {
 }
 
 
+
+

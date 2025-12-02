@@ -88,7 +88,7 @@ public class LibraryController {
             Authentication authentication) {
         String email = authentication.getName();
         boolean owns = libraryService.userOwnsGame(email, gameId);
-        
+
         Map<String, Boolean> response = new HashMap<>();
         response.put("owns", owns);
         return ResponseEntity.ok(response);
@@ -125,5 +125,7 @@ public class LibraryController {
         return ResponseEntity.ok(game);
     }
 }
+
+
 
 

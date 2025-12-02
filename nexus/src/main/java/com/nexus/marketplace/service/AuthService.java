@@ -85,6 +85,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .expiresIn(jwtExpiration)
                 .build();
@@ -110,6 +111,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .expiresIn(jwtExpiration)
                 .build();
@@ -126,6 +128,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .active(user.getActive())
                 .createdAt(user.getCreatedAt())

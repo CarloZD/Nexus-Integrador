@@ -55,3 +55,5 @@ CREATE INDEX IF NOT EXISTS `idx_library_installed` ON `user_library` (`user_id`,
 CREATE INDEX IF NOT EXISTS `idx_library_last_played` ON `user_library` (`user_id`, `last_played`);
 
 
+
+

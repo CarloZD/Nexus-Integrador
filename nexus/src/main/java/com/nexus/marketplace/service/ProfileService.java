@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ProfileService {
@@ -20,6 +21,9 @@ public class ProfileService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     public UserDTO getProfile(String email) {
         User user = userRepository.findByEmail(email)
@@ -71,9 +75,34 @@ public class ProfileService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        // Eliminar avatar si existe
+        if (user.getAvatarUrl() != null) {
+            fileStorageService.deleteFile(user.getAvatarUrl());
+        }
+
         // Desactivar cuenta en lugar de eliminarla (soft delete)
         user.setActive(false);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public UserDTO uploadAvatar(String email, MultipartFile file) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Eliminar avatar anterior si existe
+        if (user.getAvatarUrl() != null) {
+            fileStorageService.deleteFile(user.getAvatarUrl());
+        }
+
+        // Guardar nuevo avatar
+        String fileName = fileStorageService.saveFile(file);
+        String avatarUrl = "/uploads/" + fileName;
+
+        user.setAvatarUrl(avatarUrl);
+        user = userRepository.save(user);
+
+        return convertToDTO(user);
     }
 
     private UserDTO convertToDTO(User user) {
@@ -82,6 +111,7 @@ public class ProfileService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .active(user.getActive())
                 .createdAt(user.getCreatedAt())

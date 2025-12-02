@@ -168,7 +168,21 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
       <div className="p-6">
         {/* Author */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+          {post.user?.avatarUrl ? (
+            <img
+              src={getImageUrl(post.user.avatarUrl)}
+              alt={post.user.username || 'Usuario'}
+              className="w-10 h-10 rounded-full object-cover border-2 border-primary-200"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div 
+            className={`w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center ${post.user?.avatarUrl ? 'hidden' : ''}`}
+            style={{ display: post.user?.avatarUrl ? 'none' : 'flex' }}
+          >
             <User size={20} className="text-primary-600" />
           </div>
           <div>
@@ -523,7 +537,21 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
         <div className="p-6">
           {/* Author */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+            {post.user?.avatarUrl ? (
+              <img
+                src={getImageUrl(post.user.avatarUrl)}
+                alt={post.user.username || 'Usuario'}
+                className="w-10 h-10 rounded-full object-cover border-2 border-primary-200"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className={`w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center ${post.user?.avatarUrl ? 'hidden' : ''}`}
+              style={{ display: post.user?.avatarUrl ? 'none' : 'flex' }}
+            >
               <User size={20} className="text-primary-600" />
             </div>
             <div>
@@ -565,6 +593,23 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
               {post.comments.map((c) => (
                 <div key={c.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
+                    {c.user?.avatarUrl ? (
+                      <img
+                        src={getImageUrl(c.user.avatarUrl)}
+                        alt={c.user.username || 'Usuario'}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-primary-200"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center ${c.user?.avatarUrl ? 'hidden' : ''}`}
+                      style={{ display: c.user?.avatarUrl ? 'none' : 'flex' }}
+                    >
+                      <User size={16} className="text-primary-600" />
+                    </div>
                     <span className="font-semibold text-sm">{c.user?.username}</span>
                     <span className="text-xs text-gray-500">
                       {new Date(c.createdAt).toLocaleDateString()}
@@ -607,3 +652,5 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
     </div>
   );
 } 
+
+

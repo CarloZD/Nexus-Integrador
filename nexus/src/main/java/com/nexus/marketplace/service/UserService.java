@@ -257,6 +257,7 @@ public class UserService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .active(user.getActive())
                 .createdAt(user.getCreatedAt())
