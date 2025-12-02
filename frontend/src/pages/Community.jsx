@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Heart, Eye, Send, Loader2, Plus, X, User } from 'lucide-react';
+import { MessageSquare, Heart, Eye, Send, Loader2, Plus, X, User, Image as ImageIcon, Trash2 } from 'lucide-react';
 import axiosInstance from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 
@@ -134,7 +134,8 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
         <img 
           src={post.imageUrl} 
           alt={post.title}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover cursor-pointer hover:opacity-95 transition"
+          onClick={() => onView(post)}
         />
       )}
       <div className="p-6">
@@ -191,12 +192,45 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
   );
 }
 
-// Create Post Modal - COMPONENTE CORREGIDO
+// Create Post Modal - CON SOPORTE PARA IMÁGENES
 function CreatePostModal({ onClose, onCreated }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast.error('Solo se permiten imágenes');
+        return;
+      }
+
+      // Validar tamaño (máx 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('La imagen no debe superar 5MB');
+        return;
+      }
+
+      setImage(file);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setImagePreview(null);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -226,19 +260,34 @@ function CreatePostModal({ onClose, onCreated }) {
 
     setLoading(true);
     try {
-      const response = await axiosInstance.post('/community/posts', { 
+      // 1. Crear el post primero
+      const postResponse = await axiosInstance.post('/community/posts', { 
         title: title.trim(), 
         content: content.trim() 
       });
       
-      console.log('Post creado exitosamente:', response.data);
+      const postId = postResponse.data.id;
+
+      // 2. Si hay imagen, subirla
+      if (image) {
+        const formData = new FormData();
+        formData.append('file', image);
+
+        await axiosInstance.post(
+          `/community/posts/${postId}/media?mediaType=IMAGE`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+      }
+
       toast.success('¡Post creado exitosamente!');
       onCreated();
     } catch (error) {
       console.error('Error completo:', error);
-      console.error('Response data:', error.response?.data);
-      console.error('Response status:', error.response?.status);
-      
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           'Error al crear el post';
@@ -250,7 +299,7 @@ function CreatePostModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-lg w-full p-6">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Nuevo Post</h2>
           <button 
@@ -317,6 +366,46 @@ function CreatePostModal({ onClose, onCreated }) {
             </p>
           </div>
 
+          {/* Sección de imagen */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Imagen (opcional)
+            </label>
+            
+            {!imagePreview ? (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <ImageIcon className="w-10 h-10 mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    <span className="font-semibold">Click para subir</span> o arrastra una imagen
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF hasta 5MB</p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </label>
+            ) : (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -374,8 +463,8 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
         {/* Header */}
         <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
           <h2 className="text-xl font-bold">{post.title}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X size={24} />
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">
+            ×
           </button>
         </div>
 
@@ -392,6 +481,15 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
               </p>
             </div>
           </div>
+
+          {/* Image */}
+          {post.imageUrl && (
+            <img 
+              src={post.imageUrl}
+              alt={post.title}
+              className="w-full rounded-lg mb-4"
+            />
+          )}
 
           {/* Content */}
           <p className="text-gray-700 whitespace-pre-wrap mb-6">{post.content}</p>

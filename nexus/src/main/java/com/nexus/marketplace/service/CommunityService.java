@@ -93,7 +93,7 @@ public class CommunityService {
         Post post = postRepository.findByIdWithUser(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Post no encontrado"));
 
-        // Incrementar contador de vistas
+        // Incrementar vistas
         post.setViewCount(post.getViewCount() + 1);
         postRepository.save(post);
 
@@ -129,7 +129,6 @@ public class CommunityService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Verificar que el usuario sea el dueño del post
         if (!post.getUser().getId().equals(user.getId())) {
             throw new UnauthorizedException("No tienes permiso para editar este post");
         }
@@ -155,7 +154,6 @@ public class CommunityService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Verificar que el usuario sea el dueño del post o admin
         if (!post.getUser().getId().equals(user.getId()) && user.getRole() != User.UserRole.ADMIN) {
             throw new UnauthorizedException("No tienes permiso para eliminar este post");
         }
@@ -168,18 +166,17 @@ public class CommunityService {
 
     @Transactional
     public PostDTO uploadMedia(Long postId, String email, MultipartFile file, String mediaType) {
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post no encontrado"));
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Verificar que el usuario sea el dueño del post
         if (!post.getUser().getId().equals(user.getId())) {
             throw new UnauthorizedException("No tienes permiso para subir archivos a este post");
         }
 
-        // Validar tipo de archivo
         String contentType = file.getContentType();
         PostMedia.MediaType type;
 
@@ -188,20 +185,26 @@ public class CommunityService {
                 throw new RuntimeException("El archivo debe ser una imagen");
             }
             type = PostMedia.MediaType.IMAGE;
+
         } else if (mediaType.equals("VIDEO")) {
             if (contentType == null || !contentType.startsWith("video/")) {
                 throw new RuntimeException("El archivo debe ser un video");
             }
             type = PostMedia.MediaType.VIDEO;
+
         } else {
             throw new RuntimeException("Tipo de media inválido");
         }
 
-        // Guardar archivo
         String fileName = saveFile(file);
         String fileUrl = "/uploads/" + fileName;
 
-        // Crear registro de media
+        System.out.println("===========================================");
+        System.out.println("File saved: " + fileName);
+        System.out.println("File URL: " + fileUrl);
+        System.out.println("Upload DIR absolute: " + Paths.get(uploadDir).toAbsolutePath());
+        System.out.println("===========================================");
+
         PostMedia media = new PostMedia();
         media.setPost(post);
         media.setMediaUrl(fileUrl);
@@ -210,7 +213,6 @@ public class CommunityService {
 
         postMediaRepository.save(media);
 
-        // Si es la primera imagen, establecerla como imagen principal del post
         if (type == PostMedia.MediaType.IMAGE && post.getImageUrl() == null) {
             post.setImageUrl(fileUrl);
             postRepository.save(post);
@@ -221,6 +223,7 @@ public class CommunityService {
 
     @Transactional
     public void deleteMedia(Long postId, Long mediaId, String email) {
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post no encontrado"));
 
@@ -238,10 +241,8 @@ public class CommunityService {
             throw new RuntimeException("El media no pertenece a este post");
         }
 
-        // Eliminar archivo físico
         deleteFile(media.getMediaUrl());
 
-        // Si era la imagen principal, limpiarla
         if (post.getImageUrl() != null && post.getImageUrl().equals(media.getMediaUrl())) {
             post.setImageUrl(null);
             postRepository.save(post);
@@ -278,7 +279,6 @@ public class CommunityService {
 
         comment = postCommentRepository.save(comment);
 
-        // Actualizar contador de comentarios
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
 
@@ -293,7 +293,6 @@ public class CommunityService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Verificar que el usuario sea el dueño del comentario o admin
         if (!comment.getUser().getId().equals(user.getId()) && user.getRole() != User.UserRole.ADMIN) {
             throw new UnauthorizedException("No tienes permiso para eliminar este comentario");
         }
@@ -301,7 +300,6 @@ public class CommunityService {
         comment.setActive(false);
         postCommentRepository.save(comment);
 
-        // Actualizar contador
         Post post = comment.getPost();
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepository.save(post);
@@ -321,11 +319,9 @@ public class CommunityService {
                 .orElse(null);
 
         if (existingLike != null) {
-            // Unlike
             postLikeRepository.delete(existingLike);
             post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
         } else {
-            // Like
             PostLike like = new PostLike();
             like.setPost(post);
             like.setUser(user);
@@ -342,30 +338,32 @@ public class CommunityService {
 
     private String saveFile(MultipartFile file) {
         try {
-            // Crear directorio si no existe
             Path uploadPath = Paths.get(uploadDir);
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
+                System.out.println("Created upload directory: " + uploadPath.toAbsolutePath());
             }
 
-            // Generar nombre único
             String originalFilename = file.getOriginalFilename();
             String extension = originalFilename != null && originalFilename.contains(".")
                     ? originalFilename.substring(originalFilename.lastIndexOf("."))
                     : "";
+
             String fileName = UUID.randomUUID().toString() + extension;
 
-            // Guardar archivo
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            System.out.println("File stored at: " + filePath.toAbsolutePath());
 
             return fileName;
 
         } catch (IOException e) {
-            throw
-                    new RuntimeException("Error al guardar el archivo: " + e.getMessage());
+            throw new RuntimeException("Error al guardar el archivo: " + e.getMessage());
         }
     }
+
     private void deleteFile(String fileUrl) {
         try {
             if (fileUrl != null && fileUrl.startsWith("/uploads/")) {
@@ -379,21 +377,19 @@ public class CommunityService {
     }
 
     private PostDTO convertToDTO(Post post, User currentUser) {
-        // Cargar comentarios
+
         List<PostCommentDTO> comments = postCommentRepository
                 .findByPostIdAndActiveTrueOrderByCreatedAtDesc(post.getId())
                 .stream()
                 .map(this::convertCommentToDTO)
                 .collect(Collectors.toList());
 
-        // Cargar media
         List<PostMediaDTO> media = postMediaRepository
                 .findByPostIdOrderByDisplayOrder(post.getId())
                 .stream()
                 .map(this::convertMediaToDTO)
                 .collect(Collectors.toList());
 
-        // Verificar si el usuario actual dio like
         boolean isLiked = currentUser != null &&
                 postLikeRepository.existsByPostIdAndUserId(post.getId(), currentUser.getId());
 
