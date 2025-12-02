@@ -22,10 +22,47 @@ export default function AdminDashboard() {
   const [pageSize] = useState(10);
   const [showGameModal, setShowGameModal] = useState(false);
   const [editingGame, setEditingGame] = useState(null);
+  
+  // Contadores para las pestañas (se mantienen aunque no esté activa la pestaña)
+  const [counts, setCounts] = useState({ users: 0, games: 0, posts: 0 });
+
+  // Cargar contadores siempre
+  useEffect(() => {
+    loadCounts();
+  }, []);
 
   useEffect(() => {
     loadData();
   }, [currentPage, activeTab]);
+
+  // Cargar contadores de todas las secciones
+  const loadCounts = async () => {
+    try {
+      const [statsRes, gamesRes, postsRes] = await Promise.all([
+        axiosInstance.get('/admin/stats'),
+        axiosInstance.get('/admin/games'),
+        axiosInstance.get('/admin/posts?page=0&size=100') // Obtener suficientes para contar
+      ]);
+      
+      // Contar solo posts activos
+      let activePostsCount = 0;
+      if (postsRes.data.content) {
+        activePostsCount = postsRes.data.content.filter(post => post.active !== false).length;
+        // Si hay más páginas, usar totalElements como aproximación (pero filtrar los de la primera página)
+        // Por ahora, solo contamos los de la primera página
+      } else if (Array.isArray(postsRes.data)) {
+        activePostsCount = postsRes.data.filter(post => post.active !== false).length;
+      }
+      
+      setCounts({
+        users: statsRes.data.totalUsers || 0,
+        games: gamesRes.data.length || 0,
+        posts: activePostsCount
+      });
+    } catch (error) {
+      console.error('Error loading counts:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -50,18 +87,30 @@ export default function AdminDashboard() {
         if (usersRes.data.content) {
           setUsers(usersRes.data.content);
           setTotalPages(usersRes.data.totalPages);
+          setCounts(prev => ({ ...prev, users: usersRes.data.totalElements }));
         } else {
           setUsers(usersRes.data);
+          setCounts(prev => ({ ...prev, users: usersRes.data.length }));
         }
       } else if (activeTab === 'games') {
         setGames(results[1].data);
+        setCounts(prev => ({ ...prev, games: results[1].data.length }));
       } else if (activeTab === 'posts') {
         const postsRes = results[1];
         if (postsRes.data.content) {
-          setPosts(postsRes.data.content);
+          // Filtrar posts inactivos (solo mostrar activos)
+          const activePosts = postsRes.data.content.filter(post => post.active !== false);
+          setPosts(activePosts);
           setTotalPages(postsRes.data.totalPages);
+          // Actualizar contador con solo posts activos
+          setCounts(prev => ({ ...prev, posts: activePosts.length }));
         } else {
-          setPosts(postsRes.data);
+          // Filtrar posts inactivos
+          const activePosts = Array.isArray(postsRes.data) 
+            ? postsRes.data.filter(post => post.active !== false)
+            : [];
+          setPosts(activePosts);
+          setCounts(prev => ({ ...prev, posts: activePosts.length }));
         }
       } else if (activeTab === 'audit') {
         setAuditLogs(results[1].data);
@@ -96,7 +145,8 @@ export default function AdminDashboard() {
     try {
       await axiosInstance.put(`/admin/users/${userId}/toggle-status`);
       toast.success('Estado del usuario actualizado');
-      loadData();
+      await loadData();
+      await loadCounts();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al actualizar el usuario');
     }
@@ -110,7 +160,8 @@ export default function AdminDashboard() {
     try {
       await axiosInstance.put(`/admin/users/${userId}/role`, { role: newRole });
       toast.success('Rol actualizado correctamente');
-      loadData();
+      await loadData();
+      await loadCounts();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al cambiar rol');
     }
@@ -122,7 +173,9 @@ export default function AdminDashboard() {
     try {
       await axiosInstance.delete(`/admin/users/${userId}`);
       toast.success('Usuario eliminado');
-      loadData();
+      // Recargar datos y contadores
+      await loadData();
+      await loadCounts();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al eliminar el usuario');
     }
@@ -227,7 +280,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Usuarios ({users.length})
+                Usuarios ({counts.users})
               </button>
               <button
                 onClick={() => setActiveTab('games')}
@@ -237,7 +290,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Juegos ({games.length})
+                Juegos ({counts.games})
               </button>
               <button
                 onClick={() => setActiveTab('posts')}
@@ -247,7 +300,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Posts ({posts.length})
+                Posts ({counts.posts})
               </button>
               <button
                 onClick={() => setActiveTab('audit')}
@@ -441,19 +494,47 @@ export default function AdminDashboard() {
               setEditingGame(game);
               setShowGameModal(true);
             }}
-            onDelete={async (gameId) => {
-              if (!window.confirm('¿Estás seguro de eliminar este juego?')) return;
+            onToggleActive={async (gameId, currentActive) => {
               try {
-                await axiosInstance.delete(`/admin/games/${gameId}`);
-                toast.success('Juego eliminado');
-                loadData();
+                await axiosInstance.put(`/admin/games/${gameId}`, { active: !currentActive });
+                toast.success(`Juego ${!currentActive ? 'activado' : 'ocultado'}`);
+                await loadData();
+                await loadCounts();
               } catch (error) {
-                toast.error(error.response?.data?.message || 'Error al eliminar el juego');
+                toast.error(error.response?.data?.message || 'Error al actualizar el juego');
+              }
+            }}
+            onDelete={async (gameId) => {
+              if (!window.confirm('¿Estás seguro de ocultar este juego? (Se ocultará pero no se eliminará)')) return;
+              try {
+                await axiosInstance.put(`/admin/games/${gameId}`, { active: false });
+                toast.success('Juego ocultado');
+                await loadData();
+                await loadCounts();
+              } catch (error) {
+                toast.error(error.response?.data?.message || 'Error al ocultar el juego');
               }
             }}
             onCreate={() => {
               setEditingGame(null);
               setShowGameModal(true);
+            }}
+          />
+        )}
+
+        {/* Modal para crear/editar juegos */}
+        {showGameModal && (
+          <GameModal
+            game={editingGame}
+            onClose={() => {
+              setShowGameModal(false);
+              setEditingGame(null);
+            }}
+            onSave={async () => {
+              await loadData();
+              await loadCounts();
+              setShowGameModal(false);
+              setEditingGame(null);
             }}
           />
         )}
@@ -467,7 +548,13 @@ export default function AdminDashboard() {
               try {
                 await axiosInstance.delete(`/admin/posts/${postId}`);
                 toast.success('Post eliminado');
-                loadData();
+                // Actualizar contador inmediatamente
+                setCounts(prev => ({ ...prev, posts: Math.max(0, prev.posts - 1) }));
+                // Remover el post de la lista localmente
+                setPosts(prev => prev.filter(post => post.id !== postId));
+                // Recargar datos para asegurar sincronización
+                await loadData();
+                await loadCounts();
               } catch (error) {
                 toast.error(error.response?.data?.message || 'Error al eliminar el post');
               }
@@ -484,7 +571,7 @@ export default function AdminDashboard() {
 }
 
 // Componente para la pestaña de Juegos
-function GamesTab({ games, onRefresh, onEdit, onDelete, onCreate }) {
+function GamesTab({ games, onRefresh, onEdit, onDelete, onCreate, onToggleActive }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -533,9 +620,20 @@ function GamesTab({ games, onRefresh, onEdit, onDelete, onCreate }) {
                         <Edit size={18} />
                       </button>
                       <button
+                        onClick={() => onToggleActive(game.id, game.active)}
+                        className={`p-2 rounded transition ${
+                          game.active 
+                            ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' 
+                            : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                        }`}
+                        title={game.active ? 'Ocultar' : 'Mostrar'}
+                      >
+                        {game.active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                      </button>
+                      <button
                         onClick={() => onDelete(game.id)}
                         className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition"
-                        title="Eliminar"
+                        title="Ocultar"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -640,6 +738,306 @@ function AuditTab({ logs }) {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente Modal para crear/editar juegos
+function GameModal({ game, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    title: game?.title || '',
+    steamAppId: game?.steamAppId || '',
+    shortDescription: game?.shortDescription || '',
+    description: game?.description || '',
+    price: game?.price || 0,
+    category: game?.category || 'ACTION',
+    platform: game?.platform || 'PC',
+    rating: game?.rating || 0,
+    imageUrl: game?.imageUrl || '',
+    coverImageUrl: game?.coverImageUrl || '',
+    featured: game?.featured || false,
+    developer: game?.developer || '',
+    publisher: game?.publisher || '',
+    releaseDate: game?.releaseDate || '',
+    genres: game?.genres || '',
+    isFree: game?.isFree || false,
+    stock: game?.stock || 0,
+    active: game?.active !== undefined ? game.active : true
+  });
+  const [loading, setLoading] = useState(false);
+
+  const categories = ['ACTION', 'ADVENTURE', 'RPG', 'STRATEGY', 'SPORTS', 'SIMULATION', 'RACING', 'PUZZLE', 'HORROR', 'INDIE'];
+  const platforms = ['PC', 'PS5', 'XBOX', 'NINTENDO_SWITCH', 'MULTI'];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (game) {
+        // Actualizar juego existente
+        await axiosInstance.put(`/admin/games/${game.id}`, formData);
+        toast.success('Juego actualizado exitosamente');
+      } else {
+        // Crear nuevo juego
+        await axiosInstance.post('/admin/games', formData);
+        toast.success('Juego creado exitosamente');
+      }
+      onSave();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al guardar el juego');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) || 0 : value
+    }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {game ? 'Editar Juego' : 'Nuevo Juego'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Título *
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Steam App ID *
+              </label>
+              <input
+                type="text"
+                name="steamAppId"
+                value={formData.steamAppId}
+                onChange={handleChange}
+                required={!game}
+                disabled={!!game}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Precio *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Categoría
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Plataforma
+              </label>
+              <select
+                name="platform"
+                value={formData.platform}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                {platforms.map(plat => (
+                  <option key={plat} value={plat}>{plat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Desarrollador
+              </label>
+              <input
+                type="text"
+                name="developer"
+                value={formData.developer}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Editor
+              </label>
+              <input
+                type="text"
+                name="publisher"
+                value={formData.publisher}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha de Lanzamiento
+              </label>
+              <input
+                type="text"
+                name="releaseDate"
+                value={formData.releaseDate}
+                onChange={handleChange}
+                placeholder="YYYY-MM-DD"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL de Imagen
+              </label>
+              <input
+                type="url"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Stock
+              </label>
+              <input
+                type="number"
+                name="stock"
+                value={formData.stock}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Descripción Corta
+            </label>
+            <textarea
+              name="shortDescription"
+              value={formData.shortDescription}
+              onChange={handleChange}
+              rows={2}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Descripción
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="flex items-center space-x-6">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">Destacado</span>
+            </label>
+
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="isFree"
+                checked={formData.isFree}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">Gratis</span>
+            </label>
+
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="active"
+                checked={formData.active}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">Activo</span>
+            </label>
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Guardando...' : (game ? 'Actualizar' : 'Crear')}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -297,10 +297,11 @@ public class CommunityService {
             throw new UnauthorizedException("No tienes permiso para eliminar este comentario");
         }
 
-        comment.setActive(false);
-        postCommentRepository.save(comment);
-
+        // Eliminación física permanente
         Post post = comment.getPost();
+        postCommentRepository.delete(comment);
+        
+        // Actualizar contador de comentarios del post
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepository.save(post);
     }
@@ -309,18 +310,22 @@ public class CommunityService {
 
     /**
      * Eliminar post como admin (sin verificar propiedad)
+     * Eliminación física permanente - elimina el post y todas sus relaciones
      */
     @Transactional
     public void deletePostAsAdmin(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post no encontrado"));
         
-        post.setActive(false);
-        postRepository.save(post);
+        // Eliminación física permanente
+        // Las relaciones (comentarios, media, likes) se eliminarán automáticamente
+        // gracias a cascade = CascadeType.ALL en la entidad Post
+        postRepository.delete(post);
     }
 
     /**
      * Eliminar comentario como admin (sin verificar propiedad)
+     * Eliminación física permanente
      */
     @Transactional
     public void deleteCommentAsAdmin(Long postId, Long commentId) {
@@ -331,10 +336,11 @@ public class CommunityService {
             throw new RuntimeException("El comentario no pertenece a este post");
         }
 
-        comment.setActive(false);
-        postCommentRepository.save(comment);
-
+        // Eliminación física permanente
         Post post = comment.getPost();
+        postCommentRepository.delete(comment);
+        
+        // Actualizar contador de comentarios del post
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepository.save(post);
     }
@@ -350,6 +356,28 @@ public class CommunityService {
         User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
 
         return posts.map(post -> convertToDTO(post, currentUser));
+    }
+
+    /**
+     * Actualizar post como admin (sin verificar propiedad)
+     */
+    @Transactional
+    public PostDTO updatePostAsAdmin(Long postId, UpdatePostRequest request) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post no encontrado"));
+
+        if (request.getTitle() != null && !request.getTitle().isEmpty()) {
+            post.setTitle(request.getTitle());
+        }
+
+        if (request.getContent() != null && !request.getContent().isEmpty()) {
+            post.setContent(request.getContent());
+        }
+
+        post = postRepository.save(post);
+
+        User currentUser = post.getUser();
+        return convertToDTO(post, currentUser);
     }
 
     // ==================== LIKES ====================
@@ -475,6 +503,7 @@ public class CommunityService {
                 .isLikedByCurrentUser(isLiked)
                 .media(media)
                 .comments(comments)
+                .active(post.getActive())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();

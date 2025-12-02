@@ -26,6 +26,7 @@ public class PostDTO {
     private Boolean isLikedByCurrentUser;
     private List<PostMediaDTO> media;
     private List<PostCommentDTO> comments;
+    private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

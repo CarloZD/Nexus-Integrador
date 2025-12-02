@@ -4,6 +4,7 @@ import com.nexus.marketplace.dto.game.GameDTO;
 import com.nexus.marketplace.dto.game.GameCreateRequest;
 import com.nexus.marketplace.dto.game.GameUpdateRequest;
 import com.nexus.marketplace.dto.post.PostDTO;
+import com.nexus.marketplace.dto.post.UpdatePostRequest;
 import com.nexus.marketplace.dto.user.UserDTO;
 import com.nexus.marketplace.dto.user.UserProfileResponse;
 import com.nexus.marketplace.dto.user.UserStatsDTO;
@@ -351,6 +352,34 @@ public class AdminController {
         String email = authentication.getName();
         Page<PostDTO> posts = communityService.getAllPostsIncludingInactive(page, size, email);
         return ResponseEntity.ok(posts);
+    }
+
+    @PutMapping("/posts/{id}")
+    @Operation(
+            summary = "Actualizar post (Admin)",
+            description = "Actualiza un post del sistema (solo admin)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Post actualizado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Post no encontrado")
+    })
+    public ResponseEntity<PostDTO> updatePost(
+            @Parameter(description = "ID del post")
+            @PathVariable Long id,
+            @Valid @RequestBody UpdatePostRequest request,
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
+        
+        PostDTO post = communityService.updatePostAsAdmin(id, request);
+        
+        // Registrar en auditoría
+        Long adminId = getUserIdFromAuth(authentication);
+        String ipAddress = getClientIpAddress(httpRequest);
+        auditService.log(adminId, "POST_UPDATE", 
+                String.format("Admin actualizó post ID: %d", id), 
+                ipAddress);
+        
+        return ResponseEntity.ok(post);
     }
 
     @DeleteMapping("/posts/{id}")
