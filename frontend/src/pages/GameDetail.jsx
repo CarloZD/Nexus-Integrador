@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ArrowLeft, ShoppingCart, Heart, Calendar, User, Building, DollarSign,
-    Loader2, CheckCircle, Package, ThumbsUp, ThumbsDown, Star,
-    Users, Globe, Gamepad2, MessageSquare, Library
+    ArrowLeft, ShoppingCart, Heart, User, CheckCircle, 
+    ThumbsUp, ThumbsDown, Globe, Gamepad2, Library, Share2, Monitor, Cpu
 } from 'lucide-react';
 import { gameApi } from '../api/gameApi';
 import { useCart } from '../hooks/useCart';
@@ -11,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import axiosInstance from '../api/axiosConfig';
 import ReviewSection from '../components/reviews/ReviewSection';
+import homeBg from '../assets/Astrogradiant.png';
 
 export default function GameDetail() {
     const { id } = useParams();
@@ -25,6 +25,7 @@ export default function GameDetail() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
     const [userOwnsGame, setUserOwnsGame] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null); 
 
     const token = localStorage.getItem('token');
     const user = getCurrentUser();
@@ -42,6 +43,7 @@ export default function GameDetail() {
             setLoading(true);
             const data = await gameApi.getGameById(id);
             setGame(data);
+            setSelectedImage(data.headerImage || data.coverImageUrl);
         } catch (error) {
             console.error('Error loading game:', error);
             toast.error('Error al cargar el juego');
@@ -106,6 +108,7 @@ export default function GameDetail() {
         try {
             await addToCart(game.id, 1);
             setAddedToCart(true);
+            toast.success('Agregado al carrito');
             setTimeout(() => {
                 setAddedToCart(false);
             }, 2000);
@@ -116,40 +119,20 @@ export default function GameDetail() {
         }
     };
 
-    const handleBuyNow = async () => {
-        if (!token) {
-            toast.error('Debes iniciar sesión para comprar');
-            return;
-        }
-
-        setAddingToCart(true);
-        try {
-            await addToCart(game.id, 1);
-            navigate('/cart');
-        } catch (error) {
-            console.error('Error:', error);
-        } finally {
-            setAddingToCart(false);
-        }
-    };
-
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900">
-                <Loader2 className="animate-spin text-purple-500" size={48} />
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
             </div>
         );
     }
 
     if (!game) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white font-orbitron">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-white mb-4">Juego no encontrado</h2>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="text-purple-400 hover:text-purple-300"
-                    >
+                    <h2 className="text-2xl font-bold mb-4">Juego no encontrado</h2>
+                    <button onClick={() => navigate('/')} className="text-purple-400 hover:text-purple-300 underline">
                         Volver al catálogo
                     </button>
                 </div>
@@ -157,243 +140,224 @@ export default function GameDetail() {
         );
     }
 
-    // Parsear screenshots
     const screenshots = game.screenshots ? game.screenshots.split(',').filter(s => s.trim()) : [];
+    const allImages = [game.headerImage || game.coverImageUrl, ...screenshots].filter(Boolean);
+    const uniqueImages = [...new Set(allImages)];
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900">
-            {/* Header con título */}
-            <div className="bg-gray-800 border-b border-purple-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="min-h-screen text-white font-orbitron pb-10 bg-cover bg-no-repeat"
+             style={{ 
+                 backgroundImage: `linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url(${homeBg})`,
+                 backgroundPosition: 'center 0px'
+             }}>
+            
+            {/* Header Navigation */}
+            <div className="border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-[75px] z-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <button
                         onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-purple-300 mb-4 hover:text-purple-200 transition-colors"
+                        // CAMBIO: Efecto morado brilloso (LED) al hacer hover
+                        className="flex items-center gap-2 text-white hover:text-white hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)] transition-all text-xs font-bold uppercase tracking-widest"
                     >
-                        <ArrowLeft size={20} />
-                        Volver
+                        <ArrowLeft size={16} />
+                        Volver al catálogo
                     </button>
+                </div>
+            </div>
 
-                    <div className="flex items-start gap-6">
-                        {/* Imagen principal del juego */}
-                        <div className="flex-shrink-0">
-                            <img
-                                src={game.headerImage || game.coverImageUrl}
-                                alt={game.title}
-                                className="w-64 h-80 object-cover rounded-lg shadow-2xl"
-                                onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/256x320/4c1d95/ffffff?text=No+Image';
-                                }}
-                            />
-                            {/* Thumbnails de screenshots */}
-                            {screenshots.length > 0 && (
-                                <div className="flex gap-2 mt-3">
-                                    {screenshots.slice(0, 5).map((screenshot, idx) => (
-                                        <img
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                {/* --- HERO SECTION (CAJA ÚNICA UNIFICADA) --- */}
+                {/* CAMBIO: Este div ahora encierra TODO (Imagen + Info) en un solo cuadro negro transparente */}
+                <div className="bg-black/60 backdrop-blur-md rounded-[30px] p-6 md:p-8 shadow-xl mb-12">
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        
+                        {/* COLUMNA IZQUIERDA: IMÁGENES (7 cols) */}
+                        <div className="lg:col-span-7 space-y-4">
+                            {/* Imagen Principal */}
+                            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black">
+                                <img 
+                                    src={selectedImage} 
+                                    alt={game.title} 
+                                    className="w-full h-full object-cover transition-all duration-500"
+                                />
+                            </div>
+
+                            {/* Galería de Miniaturas */}
+                            {uniqueImages.length > 0 && (
+                                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                                    {uniqueImages.slice(0, 6).map((img, idx) => (
+                                        <button 
                                             key={idx}
-                                            src={screenshot.trim()}
-                                            alt={`Screenshot ${idx + 1}`}
-                                            className="w-16 h-10 object-cover rounded cursor-pointer hover:opacity-80 transition"
-                                            onClick={() => window.open(screenshot.trim(), '_blank')}
-                                        />
+                                            onClick={() => setSelectedImage(img)}
+                                            className={`relative w-24 h-16 flex-shrink-0 rounded-lg overflow-hidden  transition-all ${
+                                                selectedImage === img 
+                                                ? 'border-white opacity-100' 
+                                                : 'border-transparent opacity-50 hover:opacity-100 hover:border-white/30'
+                                            }`}
+                                        >
+                                            <img src={img} alt={`shot-${idx}`} className="w-full h-full object-cover" />
+                                        </button>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* Información del juego */}
-                        <div className="flex-1">
-                            <h1 className="text-4xl font-bold text-white mb-3">{game.title}</h1>
-                            <p className="text-gray-300 mb-4 leading-relaxed">
-                                {game.shortDescription || game.description || 'Sin descripción disponible'}
-                            </p>
-
-                            {game.genres && (
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {game.genres.split(',').slice(0, 2).map((genre, index) => (
-                                        <span
-                                            key={index}
-                                            className="bg-purple-700 text-white px-3 py-1 rounded text-sm font-medium"
-                                        >
-                      {genre.trim()}
-                    </span>
-                                    ))}
+                        {/* COLUMNA DERECHA: INFO (5 cols) */}
+                        <div className="lg:col-span-5 flex flex-col">
+                            
+                            {/* Título y Descripción */}
+                            <div className="mb-4">
+                                <h1 className="text-3xl md:text-4xl font-black text-white mb-4 leading-tight uppercase" 
+                                    style={{ fontFamily: '"Press Start 2P", cursive', lineHeight: '1.4' }}>
+                                    {game.title}
+                                </h1>
+                                <div className="p-1">
+                                    <p className="text-sm text-gray-300 font-sans leading-relaxed">
+                                        {game.description || "Sumérgete en esta increíble experiencia. Gráficos mejorados, jugabilidad inmersiva y un mundo detallado te esperan."}
+                                    </p>
                                 </div>
-                            )}
+                            </div>
 
-                            <div className="flex items-center gap-4">
-                                {game.stock > 0 ? (
-                                    <span className="text-green-400 font-semibold">DISPONIBLE</span>
+                            {/* Tags */}
+                            <div className="flex flex-wrap items-center gap-3 mb-4">
+                                {game.genres && game.genres.split(',').slice(0, 3).map((genre, idx) => (
+                                    <span key={idx} className="px-3 py-1 bg-gray-800 text-gray-300 text-[10px] font-bold rounded-md border border-gray-700 uppercase tracking-wider">
+                                        {genre.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                            
+                            {/* Estado */}
+                            <div className="mb-8">
+                                <span className={`text-[12px] font-black uppercase tracking-widest ${
+                                    game.stock > 0 ? 'text-[#4ade80]' : 'text-red-500'
+                                }`}>
+                                    {game.stock > 0 ? '• DISPONIBLE' : '• AGOTADO'}
+                                </span>
+                            </div>
+
+                            {/* Bloque de Precio y Acción */}
+                            <div className="mt-auto pt-4 border-t border-white/10">
+                                <div className="flex items-center justify-between gap-4 mb-6">
+                                    <div className="flex flex-col">
+                                        {game.isFree ? (
+                                            <span className="text-4xl font-black text-[#4ade80] drop-shadow-[0_0_5px_rgba(74,222,128,0.5)]">GRATIS</span>
+                                        ) : (
+                                            <span className="text-4xl font-black text-[#4ade80] drop-shadow-[0_0_5px_rgba(74,222,128,0.5)]">
+                                                S/. {parseFloat(game.price).toFixed(2)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button 
+                                        onClick={toggleFavorite}
+                                        className={`p-3 rounded-xl transition-all bg-black/40 hover:bg-black/60 ${
+                                            isFavorite 
+                                            ? 'text-red-500 hover:scale-110' 
+                                            : 'text-gray-400 hover:text-white hover:scale-110'
+                                        }`}
+                                    >
+                                        <Heart size={28} fill={isFavorite ? "currentColor" : "none"} />
+                                    </button>
+                                </div>
+
+                                {userOwnsGame ? (
+                                    <button 
+                                        onClick={() => navigate('/library')}
+                                        className="w-full py-4 bg-purple-700 hover:bg-purple-600 text-white font-black uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.4)] transition-all flex items-center justify-center gap-3"
+                                    >
+                                        <Library size={20} />
+                                        EN TU BIBLIOTECA
+                                    </button>
                                 ) : (
-                                    <span className="text-red-400 font-semibold">AGOTADO</span>
+                                    <button 
+                                        onClick={handleAddToCart}
+                                        disabled={addingToCart || game.stock <= 0 || addedToCart}
+                                        className={`w-full py-4 font-black uppercase tracking-widest rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 ${
+                                            addedToCart 
+                                            ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(22,163,74,0.4)]' 
+                                            : 'bg-white text-black hover:bg-gray-200 hover:scale-[1.02]'
+                                        } ${game.stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {addingToCart ? (
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
+                                        ) : addedToCart ? (
+                                            <> <CheckCircle size={20} /> AGREGADO </>
+                                        ) : (
+                                            <> 
+                                              <ShoppingCart size={20} /> 
+                                              AGREGAR AL CARRITO 
+                                            </>
+                                        )}
+                                    </button>
                                 )}
                             </div>
                         </div>
 
-                        {/* Precio y botón de compra */}
-                        <div className="flex-shrink-0 text-right">
-                            {userOwnsGame ? (
-                                <div className="mb-4">
-                                    <div className="text-lg font-semibold text-green-400 mb-3">
-                                        ✓ Ya tienes este juego
-                                    </div>
-                                    <button
-                                        onClick={() => navigate('/library')}
-                                        className="px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
-                                    >
-                                        <Library size={18} />
-                                        Ver en biblioteca
-                                    </button>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="mb-4">
-                                        {game.isFree ? (
-                                            <div className="text-3xl font-bold text-green-400">GRATIS</div>
-                                        ) : (
-                                            <div className="text-3xl font-bold text-green-400">
-                                                S/. {parseFloat(game.price).toFixed(2)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={handleAddToCart}
-                                        disabled={addingToCart || game.stock <= 0 || addedToCart}
-                                        className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-                                            addedToCart
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                    >
-                                        {addingToCart ? (
-                                            <>
-                                                <Loader2 className="animate-spin" size={18} />
-                                                Agregando...
-                                            </>
-                                        ) : addedToCart ? (
-                                            <>
-                                                <CheckCircle size={18} />
-                                                ¡Agregado!
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ShoppingCart size={18} />
-                                                Agregar al carrito
-                                            </>
-                                        )}
-                                    </button>
-                                </>
-                            )}
-                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Contenido principal */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* --- SECCIÓN INFERIOR (GRID 2 COLUMNAS) --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Columna izquierda - Reviews */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <ReviewSection gameId={id} userOwnsGame={userOwnsGame} />
+                    
+                    {/* IZQUIERDA (2/3): RESEÑAS */}
+                    <div className="lg:col-span-2">
+                        <div className="bg-black/60 backdrop-blur-md border border-white rounded-[30px] p-1 overflow-hidden">
+                            <div className="p-4 border-b border-white/5">
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2" style={{ fontFamily: '"Press Start 2P", cursive' }}>
+                                    TUS RESEÑAS
+                                </h2>
+                            </div>
+                            <div className="p-6">
+                                <ReviewSection gameId={id} userOwnsGame={userOwnsGame} />
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Columna derecha - Especificaciones */}
+                    {/* DERECHA (1/3): ESPECIFICACIONES */}
                     <div className="lg:col-span-1">
-                        <div className="bg-gray-800 border-2 border-purple-700 rounded-lg p-6 sticky top-24">
-                            <h2 className="text-xl font-bold text-white mb-4">Especificaciones</h2>
+                        <div className="bg-black/60 backdrop-blur-md border border-white rounded-[30px] p-6 sticky top-24 shadow-xl">
+                            <h2 className="text-lg font-bold text-white mb-6 text-left uppercase tracking-widest" style={{ fontFamily: '"Press Start 2P", cursive' }}>
+                                Especificaciones
+                            </h2>
+                            
                             <div className="space-y-4">
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <User size={20} className="text-purple-400" />
+                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300 border-b border-white/10 pb-3">
+                                    <User size={18} className="text-purple-500" />
                                     <span>Un jugador</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <Users size={20} className="text-purple-400" />
+                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300 border-b border-white/10 pb-3">
+                                    <Globe size={18} className="text-blue-500" />
                                     <span>Multijugador masivo</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <Globe size={20} className="text-purple-400" />
+                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300 border-b border-white/10 pb-3">
+                                    <Gamepad2 size={18} className="text-green-500" />
                                     <span>JcJ en línea</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <Gamepad2 size={20} className="text-purple-400" />
+                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300 border-b border-white/10 pb-3">
+                                    <Monitor size={18} className="text-yellow-500" />
                                     <span>Cooperativo en línea</span>
                                 </div>
-                            </div>
 
-                            <div className="mt-6 pt-6 border-t border-gray-700">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-white font-semibold">Precio</h3>
-                                    {game.isFree ? (
-                                        <span className="text-2xl font-bold text-green-400">GRATIS</span>
-                                    ) : (
-                                        <span className="text-2xl font-bold text-green-400">
-                      S/. {parseFloat(game.price).toFixed(2)}
-                    </span>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    {userOwnsGame ? (
-                                        <button
-                                            onClick={() => navigate('/library')}
-                                            className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
-                                        >
-                                            <Library size={18} />
-                                            Ver en biblioteca
-                                        </button>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={handleAddToCart}
-                                                disabled={addingToCart || game.stock <= 0 || addedToCart}
-                                                className={`w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                                                    addedToCart
-                                                        ? 'bg-green-600 text-white'
-                                                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                                                } disabled:opacity-50`}
-                                            >
-                                                {addingToCart ? (
-                                                    <Loader2 className="animate-spin" size={18} />
-                                                ) : addedToCart ? (
-                                                    <>
-                                                        <CheckCircle size={18} />
-                                                        Agregado
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ShoppingCart size={18} />
-                                                        Agregar al carrito
-                                                    </>
-                                                )}
-                                            </button>
-
-                                            <button
-                                                onClick={handleBuyNow}
-                                                disabled={addingToCart || game.stock <= 0}
-                                                className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
-                                            >
-                                                Comprar ahora
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {token && (
-                                        <button
-                                            onClick={toggleFavorite}
-                                            disabled={favoriteLoading}
-                                            className={`w-full py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                                                isFavorite
-                                                    ? 'bg-red-600 text-white hover:bg-red-700'
-                                                    : 'bg-gray-700 text-white hover:bg-gray-600'
-                                            } disabled:opacity-50`}
-                                        >
-                                            <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
-                                            {isFavorite ? 'En favoritos' : 'Agregar a favoritos'}
-                                        </button>
-                                    )}
+                                <div className="mt-8 text-xs text-gray-400 space-y-3 font-sans tracking-wider">
+                                    <div className="flex justify-between">
+                                        <span className="uppercase font-bold">Desarrollador</span>
+                                        <span className="text-white">Nexus Studios</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="uppercase font-bold">Lanzamiento</span>
+                                        <span className="text-white">2025</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="uppercase font-bold">Plataforma</span>
+                                        <span className="text-white">PC / Windows</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
