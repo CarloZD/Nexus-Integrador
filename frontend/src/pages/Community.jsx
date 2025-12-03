@@ -651,6 +651,4 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
       </div>
     </div>
   );
-} 
-
-
+}
