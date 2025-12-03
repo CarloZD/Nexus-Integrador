@@ -4,8 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import axiosInstance from '../api/axiosConfig';
 import { 
   Loader2, User, Mail, Calendar, Shield, 
-  ShoppingBag, Heart, Edit2, Lock, Save, X, Upload, Camera 
+  ShoppingBag, Heart, Edit2, Lock, Save, X, Upload, Camera, Gamepad2 
 } from 'lucide-react';
+import homeBg from '../assets/Astrogradiant.png';
 
 export default function Profile() {
   const { getCurrentUser } = useAuth();
@@ -29,23 +30,9 @@ export default function Profile() {
   // Función helper para construir la URL completa de las imágenes
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
-    // Si ya es una URL completa (http:// o https://), devolverla tal cual
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    
-    // Si es una ruta relativa que empieza con /uploads/, construir la URL completa
-    if (imageUrl.startsWith('/uploads/')) {
-      return `http://localhost:8080${imageUrl}`;
-    }
-    
-    // Si es una ruta relativa sin /uploads/, también construir la URL completa
-    if (imageUrl.startsWith('/')) {
-      return `http://localhost:8080${imageUrl}`;
-    }
-    
-    // Si no empieza con /, asumir que es relativa a /uploads/
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
+    if (imageUrl.startsWith('/uploads/')) return `http://localhost:8080${imageUrl}`;
+    if (imageUrl.startsWith('/')) return `http://localhost:8080${imageUrl}`;
     return `http://localhost:8080/uploads/${imageUrl}`;
   };
 
@@ -92,7 +79,6 @@ export default function Profile() {
       const response = await axiosInstance.put('/profile', editData);
       setProfile(response.data);
       
-      // Actualizar localStorage
       const user = JSON.parse(localStorage.getItem('user'));
       user.username = response.data.username;
       user.fullName = response.data.fullName;
@@ -151,13 +137,11 @@ export default function Profile() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       toast.error('Solo se permiten imágenes');
       return;
     }
 
-    // Validar tamaño (máx 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('La imagen no debe superar 5MB');
       return;
@@ -176,7 +160,6 @@ export default function Profile() {
 
       setProfile(response.data);
       
-      // Actualizar localStorage
       const user = JSON.parse(localStorage.getItem('user'));
       user.avatarUrl = response.data.avatarUrl;
       localStorage.setItem('user', JSON.stringify(user));
@@ -187,30 +170,24 @@ export default function Profile() {
       toast.error(error.response?.data?.message || 'Error al subir la foto de perfil');
     } finally {
       setUploadingAvatar(false);
-      // Limpiar el input
       e.target.value = '';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-primary-600" size={48} />
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <Loader2 className="animate-spin text-purple-600" size={48} />
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white font-orbitron">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Error al cargar perfil
-          </h2>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="text-primary-600 hover:text-primary-700"
-          >
+          <h2 className="text-2xl font-bold mb-4">Error al cargar perfil</h2>
+          <button onClick={() => window.location.href = '/'} className="text-purple-400 hover:text-purple-300 underline">
             Volver al inicio
           </button>
         </div>
@@ -219,16 +196,29 @@ export default function Profile() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Header Card */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 h-32" />
-          <div className="-mt-16 px-8 pb-8">
+    <div className="min-h-screen text-white font-orbitron pb-10 bg-cover bg-no-repeat"
+         style={{ 
+             backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${homeBg})`,
+             backgroundPosition: 'center 0px'
+         }}>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        
+        {/* --- HEADER DEL PERFIL --- */}
+        {/* CAMBIO: bg-black para fondo negro sólido en el cuadro de abajo */}
+        <div className="bg-black rounded-[40px] shadow-2xl overflow-hidden pb-8">
+          {/* Banner decorativo con gradiente */}
+          <div className="bg-gradient-to-r from-purple-900 via-blue-900 to-black h-64 relative">
+             <div className="absolute inset-0 bg-black/20"></div>
+          </div>
+          
+          <div className="-mt-28 px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-              <div className="flex items-center gap-4">
+              
+              {/* Avatar y Datos */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
                 <div className="relative group">
-                  <div className="w-24 h-24 rounded-2xl bg-white shadow-lg overflow-hidden flex items-center justify-center">
+                  <div className="w-40 h-40 rounded-full shadow-2xl overflow-hidden flex items-center justify-center transition-colors">
                     {profile.avatarUrl ? (
                       <img
                         src={getImageUrl(profile.avatarUrl)}
@@ -241,123 +231,106 @@ export default function Profile() {
                       />
                     ) : null}
                     <div 
-                      className={`w-full h-full flex items-center justify-center ${profile.avatarUrl ? 'hidden' : ''}`}
+                      className={`w-full h-full flex items-center justify-center bg-purple-900/20 ${profile.avatarUrl ? 'hidden' : ''}`}
                       style={{ display: profile.avatarUrl ? 'none' : 'flex' }}
                     >
-                      <User className="text-primary-600" size={40} />
+                      <User className="text-purple-600" size={64} />
                     </div>
                   </div>
-                  <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-2xl flex items-center justify-center cursor-pointer transition-opacity">
+                  
+                  {/* Overlay para subir foto */}
+                  <label className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-all border-4 border-transparent">
                     {uploadingAvatar ? (
-                      <Loader2 className="animate-spin text-white" size={24} />
+                      <Loader2 className="animate-spin text-white" size={32} />
                     ) : (
-                      <Camera className="text-white" size={24} />
+                      <div className="text-center">
+                          <Camera className="text-white mx-auto mb-0" size={24} />
+                          <span className="text-[12px] uppercase font-bold">Cambiar</span>
+                      </div>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      disabled={uploadingAvatar}
-                      className="hidden"
-                    />
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploadingAvatar} className="hidden" />
                   </label>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
+
+                {/* CAMBIO: mb-10 para subir el nombre más arriba */}
+                <div className="text-center sm:text-left mb-15">
+                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-wide uppercase drop-shadow-md">
                     {profile.fullName}
                   </h1>
-                  <p className="text-gray-500 flex items-center gap-2 mt-1">
-                    <Mail size={16} className="text-primary-500" />
-                    {profile.email}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-16">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                       profile.role === 'ADMIN' 
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                        : 'bg-blue-500/20 border-blue-500 text-blue-300'
                     }`}>
-                      {profile.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
+                      {profile.role === 'ADMIN' ? 'Administrador' : 'Gamer'}
                     </span>
-                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <span className="text-xs text-gray-400 flex items-center gap-1 font-sans">
                       <Calendar size={14} />
-                      Miembro desde {new Date(profile.createdAt).toLocaleDateString('es-ES', {
-                        month: 'long',
-                        year: 'numeric'
-                      })}
+                      Miembro desde {new Date(profile.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' })}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3">
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[12px]">
                 <button
                   onClick={() => setEditMode(!editMode)}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition flex items-center gap-2"
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl font-bold text-xs uppercase tracking-wider hover:text-purple-600 hover:border-purple-600 transition-all flex items-center justify-center gap-2"
                 >
-                  <Edit2 size={18} />
-                  Editar perfil
+                  <Edit2 size={16} />
+                  Editar
                 </button>
                 <button
                   onClick={() => setChangePasswordMode(!changePasswordMode)}
-                  className="px-6 py-3 border border-gray-200 rounded-2xl font-semibold text-gray-700 hover:border-gray-300 transition flex items-center gap-2"
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl font-bold text-xs uppercase tracking-wider hover:text-purple-600 hover:border-purple-600 transition-all flex items-center justify-center gap-2"
                 >
-                  <Lock size={18} />
-                  Cambiar contraseña
+                  <Lock size={16} />
+                  Password
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Edit Profile Form */}
+        {/* --- FORMULARIO DE EDICIÓN (MODO OSCURO) --- */}
         {editMode && (
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Editar Información</h2>
-              <button
-                onClick={() => setEditMode(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
+          <div className="bg-[#1a1a1a]/80 backdrop-blur-md rounded-2xl border border-white/10 p-6 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+              <h2 className="text-lg font-bold text-purple-400 uppercase tracking-wider">Editar Información</h2>
+              <button onClick={() => setEditMode(false)} className="text-gray-400 hover:text-white transition">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre de usuario
-                </label>
-                <input
-                  type="text"
-                  value={editData.username}
-                  onChange={(e) => setEditData({...editData, username: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase">Usuario</label>
+                  <input
+                    type="text"
+                    value={editData.username}
+                    onChange={(e) => setEditData({...editData, username: e.target.value})}
+                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none transition font-sans text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase">Nombre Completo</label>
+                  <input
+                    type="text"
+                    value={editData.fullName}
+                    onChange={(e) => setEditData({...editData, fullName: e.target.value})}
+                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none transition font-sans text-sm"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre completo
-                </label>
-                <input
-                  type="text"
-                  value={editData.fullName}
-                  onChange={(e) => setEditData({...editData, fullName: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2"
-                >
-                  <Save size={18} />
-                  Guardar cambios
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-bold uppercase text-xs hover:bg-purple-500 transition flex items-center justify-center gap-2 shadow-lg">
+                  <Save size={16} /> Guardar
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setEditMode(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
-                >
+                <button type="button" onClick={() => setEditMode(false)} className="flex-1 bg-white/5 text-gray-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-white/10 transition border border-white/10">
                   Cancelar
                 </button>
               </div>
@@ -365,69 +338,53 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Change Password Form */}
+        {/* --- FORMULARIO CAMBIAR PASSWORD (MODO OSCURO) --- */}
         {changePasswordMode && (
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Cambiar Contraseña</h2>
-              <button
-                onClick={() => setChangePasswordMode(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
+          <div className="bg-[#1a1a1a]/80 backdrop-blur-md rounded-2xl border border-white/10 p-6 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+              <h2 className="text-lg font-bold text-purple-400 uppercase tracking-wider">Cambiar Contraseña</h2>
+              <button onClick={() => setChangePasswordMode(false)} className="text-gray-400 hover:text-white transition">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contraseña actual
-                </label>
+                <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase">Contraseña Actual</label>
                 <input
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none transition font-sans text-sm"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nueva contraseña
-                </label>
-                <input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                  minLength={6}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                   <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase">Nueva Contraseña</label>
+                   <input
+                     type="password"
+                     value={passwordData.newPassword}
+                     onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                     className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none transition font-sans text-sm"
+                     required minLength={6}
+                   />
+                </div>
+                <div>
+                   <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase">Confirmar</label>
+                   <input
+                     type="password"
+                     value={passwordData.confirmPassword}
+                     onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                     className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none transition font-sans text-sm"
+                     required
+                   />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirmar nueva contraseña
-                </label>
-                <input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2"
-                >
-                  <Lock size={18} />
-                  Cambiar contraseña
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-bold uppercase text-xs hover:bg-purple-500 transition flex items-center justify-center gap-2 shadow-lg">
+                  <Lock size={16} /> Actualizar
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setChangePasswordMode(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
-                >
+                <button type="button" onClick={() => setChangePasswordMode(false)} className="flex-1 bg-white/5 text-gray-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-white/10 transition border border-white/10">
                   Cancelar
                 </button>
               </div>
@@ -435,90 +392,76 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Juegos en biblioteca</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
-              </div>
-              <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
-                <ShoppingBag className="text-primary-600" size={24} />
-              </div>
+        {/* --- STATS GRID --- */}
+        {/* CAMBIO: Se cambió el grid a md:grid-cols-2 y se eliminó la tarjeta de Favoritos pequeña */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center hover:border-blue-500/30 transition-all shadow-lg group">
+            <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+               <ShoppingBag className="text-blue-400" size={24} />
             </div>
+            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1" style={{ fontFamily: '"Press Start 2P", cursive' }}>Biblioteca</p>
+            <p className="text-2xl font-black text-white drop-shadow-md">0 Juegos</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Favoritos</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{favorites.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
-                <Heart className="text-red-600" size={24} />
-              </div>
+          <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center hover:border-green-500/30 transition-all shadow-lg group">
+            <div className="w-12 h-12 bg-green-900/20 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+               <Shield className="text-green-400" size={24} />
             </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Estado</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">Activo</p>
-              </div>
-              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                <Shield className="text-green-600" size={24} />
-              </div>
-            </div>
+            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1" style={{ fontFamily: '"Press Start 2P", cursive' }}>Estado</p>
+            <p className="text-2xl font-black text-white drop-shadow-md">ACTIVO</p>
           </div>
         </div>
 
-        {/* Favorites Section */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Mis Favoritos ({favorites.length})
+        {/* --- FAVORITES SECTION --- */}
+        <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-3xl border border-white/5 p-8">
+          <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3 border-b border-white/10 pb-4" style={{ fontFamily: '"Press Start 2P", cursive', lineHeight: '1.5' }}>
+            <Heart className="text-red-500" size={24} fill="currentColor" />
+            MIS FAVORITOS ({favorites.length})
           </h2>
+          
           {favorites.length === 0 ? (
             <div className="text-center py-12">
-              <Heart className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-600">Aún no tienes juegos favoritos</p>
+              <Gamepad2 className="mx-auto text-gray-600 mb-4" size={48} />
+              <p className="text-gray-400 font-sans text-sm">Aún no tienes juegos favoritos en tu colección.</p>
               <button
                 onClick={() => window.location.href = '/'}
-                className="mt-4 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                className="mt-6 px-8 py-3 bg-purple-600 text-white rounded-lg font-bold uppercase text-xs tracking-wider hover:bg-purple-500 transition shadow-lg"
               >
-                Explorar juegos
+                Explorar Catálogo
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {favorites.map((game) => (
-                <div key={game.id} className="bg-gray-50 rounded-xl overflow-hidden group hover:shadow-lg transition">
-                  <div className="relative h-40">
+                <div key={game.id} className="bg-black rounded-xl overflow-hidden group border border-white/10 hover:border-purple-500 transition-all shadow-lg hover:-translate-y-1 cursor-pointer"
+                     onClick={() => window.location.href = `/game/${game.id}`}>
+                  <div className="relative h-40 overflow-hidden">
                     <img
                       src={game.headerImage}
                       alt={game.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-all"></div>
                     <button
-                      onClick={() => removeFavorite(game.id)}
-                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                      onClick={(e) => {
+                         e.stopPropagation();
+                         removeFavorite(game.id);
+                      }}
+                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition shadow-lg"
+                      title="Eliminar de favoritos"
                     >
-                      <X size={16} />
+                      <X size={14} />
                     </button>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-bold text-gray-900 mb-2">{game.title}</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-primary-600">
+                    <h3 className="font-bold text-white mb-2 truncate tracking-wide">{game.title}</h3>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-lg font-black text-[#4ade80] drop-shadow-[0_0_5px_rgba(74,222,128,0.5)]">
                         ${parseFloat(game.price).toFixed(2)}
                       </span>
-                      <button
-                        onClick={() => window.location.href = `/game/${game.id}`}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
-                      >
+                      <span className="text-[10px] text-purple-300 font-bold uppercase hover:underline">
                         Ver detalles
-                      </button>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -526,6 +469,7 @@ export default function Profile() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );
