@@ -17,3 +17,4 @@ public class ChatMessageResponse {
     private List<GameDTO> games;
 }
 
+
