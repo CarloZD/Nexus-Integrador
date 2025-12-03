@@ -39,9 +39,9 @@ export const reviewApi = {
   // Crear review
   createReview: async (gameId, rating, comment) => {
     const response = await axiosInstance.post('/reviews', {
-      gameId,
-      rating,
-      comment
+      gameId: Number(gameId),
+      rating: Number(rating),
+      comment: comment || ''
     });
     return response.data;
   },
@@ -49,8 +49,8 @@ export const reviewApi = {
   // Actualizar review
   updateReview: async (reviewId, rating, comment) => {
     const response = await axiosInstance.put(`/reviews/${reviewId}`, {
-      rating,
-      comment
+      rating: Number(rating),
+      comment: comment || ''
     });
     return response.data;
   },
