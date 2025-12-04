@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Package, Activity, Shield, Loader2, 
   Edit, Trash2, ToggleLeft, ToggleRight, 
-  Search, Filter, ChevronLeft, ChevronRight,
+  Search, ChevronLeft, ChevronRight,
   Gamepad2, MessageSquare, FileText, Plus, X
 } from 'lucide-react';
+// CORRECCIÓN: Subir dos niveles (../../) para llegar a 'api' y 'assets'
 import axiosInstance from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
+import homeBg from '../../assets/Astrogradiant.png';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -23,10 +25,9 @@ export default function AdminDashboard() {
   const [showGameModal, setShowGameModal] = useState(false);
   const [editingGame, setEditingGame] = useState(null);
   
-  // Contadores para las pestañas (se mantienen aunque no esté activa la pestaña)
+  // Contadores
   const [counts, setCounts] = useState({ users: 0, games: 0, posts: 0 });
 
-  // Cargar contadores siempre
   useEffect(() => {
     loadCounts();
   }, []);
@@ -35,21 +36,17 @@ export default function AdminDashboard() {
     loadData();
   }, [currentPage, activeTab]);
 
-  // Cargar contadores de todas las secciones
   const loadCounts = async () => {
     try {
       const [statsRes, gamesRes, postsRes] = await Promise.all([
         axiosInstance.get('/admin/stats'),
         axiosInstance.get('/admin/games'),
-        axiosInstance.get('/admin/posts?page=0&size=100') // Obtener suficientes para contar
+        axiosInstance.get('/admin/posts?page=0&size=100')
       ]);
       
-      // Contar solo posts activos
       let activePostsCount = 0;
       if (postsRes.data.content) {
         activePostsCount = postsRes.data.content.filter(post => post.active !== false).length;
-        // Si hay más páginas, usar totalElements como aproximación (pero filtrar los de la primera página)
-        // Por ahora, solo contamos los de la primera página
       } else if (Array.isArray(postsRes.data)) {
         activePostsCount = postsRes.data.filter(post => post.active !== false).length;
       }
@@ -87,31 +84,17 @@ export default function AdminDashboard() {
         if (usersRes.data.content) {
           setUsers(usersRes.data.content);
           setTotalPages(usersRes.data.totalPages);
-          setCounts(prev => ({ ...prev, users: usersRes.data.totalElements }));
+          // setCounts se actualiza en loadCounts para mantener consistencia global
         } else {
           setUsers(usersRes.data);
-          setCounts(prev => ({ ...prev, users: usersRes.data.length }));
         }
       } else if (activeTab === 'games') {
         setGames(results[1].data);
-        setCounts(prev => ({ ...prev, games: results[1].data.length }));
       } else if (activeTab === 'posts') {
         const postsRes = results[1];
-        if (postsRes.data.content) {
-          // Filtrar posts inactivos (solo mostrar activos)
-          const activePosts = postsRes.data.content.filter(post => post.active !== false);
-          setPosts(activePosts);
-          setTotalPages(postsRes.data.totalPages);
-          // Actualizar contador con solo posts activos
-          setCounts(prev => ({ ...prev, posts: activePosts.length }));
-        } else {
-          // Filtrar posts inactivos
-          const activePosts = Array.isArray(postsRes.data) 
-            ? postsRes.data.filter(post => post.active !== false)
-            : [];
-          setPosts(activePosts);
-          setCounts(prev => ({ ...prev, posts: activePosts.length }));
-        }
+        const activePosts = (postsRes.data.content || postsRes.data).filter(post => post.active !== false);
+        setPosts(activePosts);
+        if (postsRes.data.totalPages) setTotalPages(postsRes.data.totalPages);
       } else if (activeTab === 'audit') {
         setAuditLogs(results[1].data);
       }
@@ -144,22 +127,21 @@ export default function AdminDashboard() {
   const toggleUserStatus = async (userId) => {
     try {
       await axiosInstance.put(`/admin/users/${userId}/toggle-status`);
-      toast.success('Estado del usuario actualizado');
+      toast.success('Estado actualizado');
       await loadData();
       await loadCounts();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al actualizar el usuario');
+      toast.error(error.response?.data?.message || 'Error al actualizar');
     }
   };
 
   const changeUserRole = async (userId, currentRole) => {
     const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN';
-    
     if (!window.confirm(`¿Cambiar rol a ${newRole}?`)) return;
 
     try {
       await axiosInstance.put(`/admin/users/${userId}/role`, { role: newRole });
-      toast.success('Rol actualizado correctamente');
+      toast.success('Rol actualizado');
       await loadData();
       await loadCounts();
     } catch (error) {
@@ -168,945 +150,523 @@ export default function AdminDashboard() {
   };
 
   const deleteUser = async (userId) => {
-    if (!window.confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm('¿Estás seguro? Esta acción es irreversible.')) return;
     
     try {
       await axiosInstance.delete(`/admin/users/${userId}`);
       toast.success('Usuario eliminado');
-      // Recargar datos y contadores
       await loadData();
       await loadCounts();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al eliminar el usuario');
+      toast.error(error.response?.data?.message || 'Error al eliminar');
     }
   };
 
   if (loading && !stats) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="animate-spin text-primary-600 mx-auto mb-4" size={48} />
-          <p className="text-gray-600">Cargando panel de administración...</p>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a]">
+        <Loader2 className="animate-spin text-purple-600" size={48} />
+        <p className="text-white font-orbitron text-sm mt-4 tracking-wider animate-pulse">CARGANDO SISTEMA...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen text-white font-orbitron pb-10 bg-cover bg-no-repeat bg-fixed"
+         style={{ 
+             backgroundImage: `linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url(${homeBg})`,
+             backgroundPosition: 'center 0px'
+         }}>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
-          <p className="text-gray-600 mt-2">Gestiona usuarios, estadísticas y configuración del sistema</p>
+        <div className="mb-10 text-center md:text-left">
+          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#d946ef] to-[#8b5cf6] drop-shadow-[0_0_15px_rgba(217,70,239,0.5)] mb-2"
+              style={{ textShadow: "0px 0px 20px rgba(168, 85, 247, 0.6)" }}>
+            PANEL DE CONTROL
+          </h1>
+          <p className="text-gray-400 text-xs font-sans tracking-wider uppercase">Administración del sistema Nexus</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Usuarios</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
-                <p className="text-sm text-green-600 mt-1">
-                  {stats?.activeUsers || 0} activos
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
-                <Users className="text-primary-600" size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Administradores</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.adminUsers || 0}</p>
-                <p className="text-sm text-gray-500 mt-1">Con permisos completos</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                <Shield className="text-purple-600" size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Usuarios Regulares</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.regularUsers || 0}</p>
-                <p className="text-sm text-gray-500 mt-1">Usuarios estándar</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Package className="text-blue-600" size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Usuarios Inactivos</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.inactiveUsers || 0}</p>
-                <p className="text-sm text-gray-500 mt-1">Desactivados</p>
-              </div>
-              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
-                <Activity className="text-red-600" size={24} />
-              </div>
-            </div>
-          </div>
+        {/* Stats Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatsCard 
+            title="TOTAL USUARIOS" 
+            value={stats?.totalUsers || 0} 
+            subValue={`${stats?.activeUsers || 0} activos`}
+            icon={<Users className="text-purple-400" size={24} />}
+            color="purple"
+          />
+          <StatsCard 
+            title="ADMINISTRADORES" 
+            value={stats?.adminUsers || 0} 
+            subValue="Acceso total"
+            icon={<Shield className="text-yellow-400" size={24} />}
+            color="yellow"
+          />
+          <StatsCard 
+            title="REGULARES" 
+            value={stats?.regularUsers || 0} 
+            subValue="Usuarios estándar"
+            icon={<Package className="text-blue-400" size={24} />}
+            color="blue"
+          />
+          <StatsCard 
+            title="INACTIVOS" 
+            value={stats?.inactiveUsers || 0} 
+            subValue="Cuentas deshabilitadas"
+            icon={<Activity className="text-red-400" size={24} />}
+            color="red"
+          />
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg mb-6">
-          <div className="border-b border-gray-200">
-            <div className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'overview'
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Vista General
-              </button>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'users'
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Usuarios ({counts.users})
-              </button>
-              <button
-                onClick={() => setActiveTab('games')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'games'
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Juegos ({counts.games})
-              </button>
-              <button
-                onClick={() => setActiveTab('posts')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'posts'
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Posts ({counts.posts})
-              </button>
-              <button
-                onClick={() => setActiveTab('audit')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'audit'
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Auditoría
-              </button>
-            </div>
-          </div>
+        {/* Navigation Tabs */}
+        <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-2 mb-8 overflow-x-auto no-scrollbar">
+           <div className="flex space-x-2 min-w-max">
+              <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<Activity size={16}/>}>Vista General</TabButton>
+              <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Users size={16}/>} count={counts.users}>Usuarios</TabButton>
+              <TabButton active={activeTab === 'games'} onClick={() => setActiveTab('games')} icon={<Gamepad2 size={16}/>} count={counts.games}>Juegos</TabButton>
+              <TabButton active={activeTab === 'posts'} onClick={() => setActiveTab('posts')} icon={<MessageSquare size={16}/>} count={counts.posts}>Posts</TabButton>
+              <TabButton active={activeTab === 'audit'} onClick={() => setActiveTab('audit')} icon={<FileText size={16}/>}>Auditoría</TabButton>
+           </div>
         </div>
 
-        {/* Content */}
-        {activeTab === 'overview' && (
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Resumen del Sistema</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">Total de usuarios registrados</span>
-                <span className="font-bold text-primary-600 text-xl">{stats?.totalUsers}</span>
-              </div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">Usuarios activos</span>
-                <span className="font-bold text-green-600 text-xl">{stats?.activeUsers}</span>
-              </div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">Administradores</span>
-                <span className="font-bold text-purple-600 text-xl">{stats?.adminUsers}</span>
-              </div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">Usuarios regulares</span>
-                <span className="font-bold text-blue-600 text-xl">{stats?.regularUsers}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'users' && (
-          <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
-                    placeholder="Buscar por email, username o nombre..."
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-                <button
-                  onClick={searchUsers}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
-                >
-                  Buscar
-                </button>
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      loadData();
-                    }}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-                  >
-                    Limpiar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Users Table */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Usuario
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Rol
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Estado
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                          <div className="text-sm text-gray-500">{user.fullName}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">{user.email}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => changeUserRole(user.id, user.role)}
-                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer hover:opacity-80 transition ${
-                              user.role === 'ADMIN'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
-                            title="Clic para cambiar rol"
-                          >
-                            {user.role}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              user.active
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {user.active ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => toggleUserStatus(user.id)}
-                              className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition"
-                              title={user.active ? 'Desactivar' : 'Activar'}
-                            >
-                              {user.active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                            </button>
-                            <button
-                              onClick={() => deleteUser(user.id)}
-                              className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition"
-                              title="Eliminar"
-                            >
-                              <Trash2 size={20} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
-                  <div className="text-sm text-gray-700">
-                    Página {currentPage + 1} de {totalPages}
+        {/* Content Area */}
+        <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl p-6 md:p-8 shadow-xl min-h-[500px]">
+            
+            {activeTab === 'overview' && (
+               <div className="text-center py-20">
+                  <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10 animate-pulse">
+                      <Shield className="text-purple-500" size={48} />
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                      disabled={currentPage === 0}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-                      disabled={currentPage >= totalPages - 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight size={20} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                  <h2 className="text-2xl font-bold text-white mb-4 uppercase tracking-widest">Bienvenido Administrador</h2>
+                  <p className="text-gray-400 max-w-md mx-auto font-sans">
+                      Selecciona una pestaña para gestionar los recursos de la plataforma. 
+                      Puedes administrar usuarios, catálogo de juegos, moderar la comunidad y ver registros de actividad.
+                  </p>
+               </div>
+            )}
 
-        {activeTab === 'games' && (
-          <GamesTab 
-            games={games} 
-            onRefresh={loadData}
-            onEdit={(game) => {
-              setEditingGame(game);
-              setShowGameModal(true);
-            }}
-            onToggleActive={async (gameId, currentActive) => {
-              try {
-                await axiosInstance.put(`/admin/games/${gameId}`, { active: !currentActive });
-                toast.success(`Juego ${!currentActive ? 'activado' : 'ocultado'}`);
-                await loadData();
-                await loadCounts();
-              } catch (error) {
-                toast.error(error.response?.data?.message || 'Error al actualizar el juego');
-              }
-            }}
-            onDelete={async (gameId) => {
-              if (!window.confirm('¿Estás seguro de ocultar este juego? (Se ocultará pero no se eliminará)')) return;
-              try {
-                await axiosInstance.put(`/admin/games/${gameId}`, { active: false });
-                toast.success('Juego ocultado');
-                await loadData();
-                await loadCounts();
-              } catch (error) {
-                toast.error(error.response?.data?.message || 'Error al ocultar el juego');
-              }
-            }}
-            onCreate={() => {
-              setEditingGame(null);
-              setShowGameModal(true);
-            }}
-          />
-        )}
-
-        {/* Modal para crear/editar juegos */}
-        {showGameModal && (
-          <GameModal
-            game={editingGame}
-            onClose={() => {
-              setShowGameModal(false);
-              setEditingGame(null);
-            }}
-            onSave={async () => {
-              await loadData();
-              await loadCounts();
-              setShowGameModal(false);
-              setEditingGame(null);
-            }}
-          />
-        )}
-
-        {activeTab === 'posts' && (
-          <PostsTab 
-            posts={posts}
-            onRefresh={loadData}
-            onDelete={async (postId) => {
-              if (!window.confirm('¿Estás seguro de eliminar este post?')) return;
-              try {
-                await axiosInstance.delete(`/admin/posts/${postId}`);
-                toast.success('Post eliminado');
-                // Actualizar contador inmediatamente
-                setCounts(prev => ({ ...prev, posts: Math.max(0, prev.posts - 1) }));
-                // Remover el post de la lista localmente
-                setPosts(prev => prev.filter(post => post.id !== postId));
-                // Recargar datos para asegurar sincronización
-                await loadData();
-                await loadCounts();
-              } catch (error) {
-                toast.error(error.response?.data?.message || 'Error al eliminar el post');
-              }
-            }}
-          />
-        )}
-
-        {activeTab === 'audit' && (
-          <AuditTab logs={auditLogs} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Componente para la pestaña de Juegos
-function GamesTab({ games, onRefresh, onEdit, onDelete, onCreate, onToggleActive }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-900">Gestión de Juegos</h2>
-        <button
-          onClick={onCreate}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Nuevo Juego
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {games.map((game) => (
-                <tr key={game.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{game.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{game.title}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${game.price}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      game.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {game.active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => onEdit(game)}
-                        className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition"
-                        title="Editar"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => onToggleActive(game.id, game.active)}
-                        className={`p-2 rounded transition ${
-                          game.active 
-                            ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' 
-                            : 'text-green-600 hover:text-green-900 hover:bg-green-50'
-                        }`}
-                        title={game.active ? 'Ocultar' : 'Mostrar'}
-                      >
-                        {game.active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                      </button>
-                      <button
-                        onClick={() => onDelete(game.id)}
-                        className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition"
-                        title="Ocultar"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+            {activeTab === 'users' && (
+                <div className="space-y-6 animate-in fade-in">
+                    {/* Search */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
+                                placeholder="BUSCAR USUARIO..." 
+                                className="w-full bg-[#151515] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-purple-500 outline-none transition-all font-sans placeholder-gray-600"
+                            />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                        </div>
+                        <button onClick={searchUsers} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-xl font-bold uppercase text-xs tracking-wider transition-all shadow-lg">
+                            Buscar
+                        </button>
+                        {searchQuery && (
+                            <button onClick={() => { setSearchQuery(''); loadData(); }} className="border border-white/20 text-gray-300 hover:text-white px-6 py-2 rounded-xl font-bold uppercase text-xs tracking-wider transition-all">
+                                Limpiar
+                            </button>
+                        )}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-// Componente para la pestaña de Posts
-function PostsTab({ posts, onRefresh, onDelete }) {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">Gestión de Posts</h2>
+                    {/* Table */}
+                    <div className="overflow-x-auto rounded-xl border border-white/10">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-white/5 text-xs uppercase text-gray-400 font-bold tracking-wider">
+                                <tr>
+                                    <th className="p-4">Usuario</th>
+                                    <th className="p-4">Email</th>
+                                    <th className="p-4">Rol</th>
+                                    <th className="p-4">Estado</th>
+                                    <th className="p-4 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-sm font-sans text-gray-300">
+                                {users.map((u) => (
+                                    <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                                        <td className="p-4 font-medium text-white">{u.username}</td>
+                                        <td className="p-4">{u.email}</td>
+                                        <td className="p-4">
+                                            <button 
+                                                onClick={() => changeUserRole(u.id, u.role)}
+                                                className={`px-2 py-1 rounded text-[10px] font-bold uppercase border transition-all ${
+                                                    u.role === 'ADMIN' 
+                                                    ? 'bg-purple-500/20 border-purple-500 text-purple-300 hover:bg-purple-500/30' 
+                                                    : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-400'
+                                                }`}
+                                                title="Click para cambiar rol"
+                                            >
+                                                {u.role}
+                                            </button>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                                                u.active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
+                                            }`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${u.active ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                                {u.active ? 'Activo' : 'Inactivo'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right space-x-2">
+                                            <button onClick={() => toggleUserStatus(u.id)} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 transition-colors" title={u.active ? "Desactivar" : "Activar"}>
+                                                {u.active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                                            </button>
+                                            <button onClick={() => deleteUser(u.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 transition-colors" title="Eliminar">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Autor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Likes</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {posts.map((post) => (
-                <tr key={post.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{post.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{post.title}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.user?.username || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{post.likeCount || 0}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      post.active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {post.active !== false ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => onDelete(post.id)}
-                      className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                            <span className="text-xs text-gray-500 font-sans">Página {currentPage + 1} de {totalPages}</span>
+                            <div className="flex gap-2">
+                                <button onClick={() => setCurrentPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0} className="p-2 border border-white/10 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed text-white">
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <button onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))} disabled={currentPage >= totalPages - 1} className="p-2 border border-white/10 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed text-white">
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
-// Componente para la pestaña de Auditoría
-function AuditTab({ logs }) {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">Logs de Auditoría</h2>
-
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Detalles</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.userId || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 max-w-md">{log.details}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.ipAddress || 'N/A'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Componente Modal para crear/editar juegos
-function GameModal({ game, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    title: game?.title || '',
-    steamAppId: game?.steamAppId || '',
-    shortDescription: game?.shortDescription || '',
-    description: game?.description || '',
-    price: game?.price || 0,
-    category: game?.category || 'ACTION',
-    platform: game?.platform || 'PC',
-    rating: game?.rating || 0,
-    imageUrl: game?.imageUrl || '',
-    coverImageUrl: game?.coverImageUrl || '',
-    featured: game?.featured || false,
-    developer: game?.developer || '',
-    publisher: game?.publisher || '',
-    releaseDate: game?.releaseDate || '',
-    genres: game?.genres || '',
-    isFree: game?.isFree || false,
-    stock: game?.stock || 0,
-    active: game?.active !== undefined ? game.active : true
-  });
-  const [loading, setLoading] = useState(false);
-
-  const categories = ['ACTION', 'ADVENTURE', 'RPG', 'STRATEGY', 'SPORTS', 'SIMULATION', 'RACING', 'PUZZLE', 'HORROR', 'INDIE'];
-  const platforms = ['PC', 'PS5', 'XBOX', 'NINTENDO_SWITCH', 'MULTI'];
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (game) {
-        // Actualizar juego existente
-        await axiosInstance.put(`/admin/games/${game.id}`, formData);
-        toast.success('Juego actualizado exitosamente');
-      } else {
-        // Crear nuevo juego
-        await axiosInstance.post('/admin/games', formData);
-        toast.success('Juego creado exitosamente');
-      }
-      onSave();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al guardar el juego');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) || 0 : value
-    }));
-  };
-
-  const handleFetchSteamData = async () => {
-    if (!formData.steamAppId) {
-      toast.error('Por favor ingresa un Steam App ID');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Intentar obtener datos de Steam usando el App ID
-      // Nota: Esto requiere una API de Steam o usar un servicio proxy
-      // Por ahora, solo pre-llenamos las URLs de imagen comunes
-      const appId = formData.steamAppId;
-      
-      // URLs comunes de Steam para imágenes
-      const headerImage = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`;
-      const coverImage = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
-      
-      setFormData(prev => ({
-        ...prev,
-        imageUrl: headerImage,
-        coverImageUrl: coverImage,
-        headerImage: headerImage
-      }));
-      
-      toast.success('URLs de imagen pre-llenadas. Verifica que funcionen correctamente.');
-    } catch (error) {
-      console.error('Error fetching Steam data:', error);
-      toast.error('No se pudo obtener información automática. Completa los campos manualmente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {game ? 'Editar Juego' : 'Nuevo Juego'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Título *
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Steam App ID *
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  name="steamAppId"
-                  value={formData.steamAppId}
-                  onChange={handleChange}
-                  required={!game}
-                  disabled={!!game}
-                  placeholder="Ej: 730 (CS:GO), 271590 (GTA V)"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+            {activeTab === 'games' && (
+                <GamesTab 
+                    games={games} 
+                    onRefresh={loadData}
+                    onEdit={(game) => { setEditingGame(game); setShowGameModal(true); }}
+                    onToggleActive={async (gameId, currentActive) => {
+                        try {
+                            await axiosInstance.put(`/admin/games/${gameId}`, { active: !currentActive });
+                            toast.success(`Juego ${!currentActive ? 'activado' : 'ocultado'}`);
+                            await loadData();
+                            await loadCounts();
+                        } catch (error) { toast.error('Error al actualizar'); }
+                    }}
+                    onDelete={async (gameId) => {
+                         if (!window.confirm('¿Ocultar este juego?')) return;
+                         try {
+                             await axiosInstance.put(`/admin/games/${gameId}`, { active: false });
+                             toast.success('Juego ocultado');
+                             await loadData();
+                         } catch (error) { toast.error('Error al ocultar'); }
+                    }}
+                    onCreate={() => { setEditingGame(null); setShowGameModal(true); }}
                 />
-                {!game && (
-                  <button
-                    type="button"
-                    onClick={handleFetchSteamData}
-                    disabled={!formData.steamAppId || loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                    title="Buscar información del juego en Steam"
-                  >
-                    Buscar
-                  </button>
-                )}
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                💡 Encuentra el Steam App ID en la URL de Steam: store.steampowered.com/app/<strong>NUMERO</strong>/
-              </p>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Precio *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+            {/* Modal Juegos */}
+            {showGameModal && (
+                <GameModal 
+                    game={editingGame} 
+                    onClose={() => { setShowGameModal(false); setEditingGame(null); }}
+                    onSave={async () => {
+                        await loadData();
+                        await loadCounts();
+                        setShowGameModal(false);
+                        setEditingGame(null);
+                    }}
+                />
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Categoría
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+            {activeTab === 'posts' && (
+                <PostsTab 
+                    posts={posts}
+                    onDelete={async (postId) => {
+                        if (!window.confirm('¿Eliminar post permanentemente?')) return;
+                        try {
+                            await axiosInstance.delete(`/admin/posts/${postId}`);
+                            toast.success('Post eliminado');
+                            setPosts(prev => prev.filter(p => p.id !== postId));
+                            setCounts(prev => ({...prev, posts: Math.max(0, prev.posts - 1)}));
+                        } catch(e) { toast.error('Error al eliminar'); }
+                    }}
+                />
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Plataforma
-              </label>
-              <select
-                name="platform"
-                value={formData.platform}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                {platforms.map(plat => (
-                  <option key={plat} value={plat}>{plat}</option>
-                ))}
-              </select>
-            </div>
+            {activeTab === 'audit' && <AuditTab logs={auditLogs} />}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Desarrollador
-              </label>
-              <input
-                type="text"
-                name="developer"
-                value={formData.developer}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+        </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Editor
-              </label>
-              <input
-                type="text"
-                name="publisher"
-                value={formData.publisher}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+      </div>
+    </div>
+  );
+}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha de Lanzamiento
-              </label>
-              <input
-                type="text"
-                name="releaseDate"
-                value={formData.releaseDate}
-                onChange={handleChange}
-                placeholder="YYYY-MM-DD"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+// --- SUBCOMPONENTES ESTILIZADOS ---
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL de Imagen (Header/Cover)
-              </label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                placeholder="https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                💡 Usa imágenes de Steam: cdn.akamai.steamstatic.com/steam/apps/<strong>APP_ID</strong>/header.jpg
-              </p>
+function StatsCard({ title, value, subValue, icon, color }) {
+    const colorClasses = {
+        purple: 'text-purple-400 border-purple-500/30 bg-purple-900/20',
+        yellow: 'text-yellow-400 border-yellow-500/30 bg-yellow-900/20',
+        blue: 'text-blue-400 border-blue-500/30 bg-blue-900/20',
+        red: 'text-red-400 border-red-500/30 bg-red-900/20',
+    };
+
+    return (
+        <div className={`rounded-2xl p-6 border backdrop-blur-sm transition-transform hover:-translate-y-1 ${colorClasses[color]} border-opacity-50`}>
+            <div className="flex justify-between items-start mb-4">
+                <div>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-70">{title}</p>
+                    <p className="text-3xl font-black mt-1">{value}</p>
+                </div>
+                <div className={`p-3 rounded-xl bg-black/20 ${colorClasses[color].split(' ')[0]}`}>
+                    {icon}
+                </div>
+            </div>
+            <p className="text-[10px] opacity-60 font-sans uppercase tracking-wide">{subValue}</p>
+        </div>
+    );
+}
+
+function TabButton({ active, onClick, icon, children, count }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                active 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+        >
+            {icon}
+            <span>{children}</span>
+            {count !== undefined && (
+                <span className={`ml-1 px-1.5 py-0.5 rounded text-[9px] ${active ? 'bg-white/20' : 'bg-white/10'}`}>
+                    {count}
+                </span>
+            )}
+        </button>
+    );
+}
+
+function GamesTab({ games, onEdit, onToggleActive, onDelete, onCreate }) {
+    return (
+        <div className="space-y-6 animate-in fade-in">
+            <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Catálogo de Juegos</h3>
+                <button onClick={onCreate} className="bg-green-600 hover:bg-green-500 text-black px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all">
+                    <Plus size={18} /> Nuevo Juego
+                </button>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL de Imagen de Portada (Opcional)
-              </label>
-              <input
-                type="url"
-                name="coverImageUrl"
-                value={formData.coverImageUrl}
-                onChange={handleChange}
-                placeholder="https://cdn.akamai.steamstatic.com/steam/apps/730/library_600x900.jpg"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
+            <div className="overflow-x-auto rounded-xl border border-white/10">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-white/5 text-xs uppercase text-gray-400 font-bold tracking-wider">
+                        <tr>
+                            <th className="p-4">ID</th>
+                            <th className="p-4">Título</th>
+                            <th className="p-4">Precio</th>
+                            <th className="p-4">Estado</th>
+                            <th className="p-4 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-sm font-sans text-gray-300">
+                        {games.map((game) => (
+                            <tr key={game.id} className="hover:bg-white/5 transition-colors">
+                                <td className="p-4 font-mono text-gray-500">#{game.id}</td>
+                                <td className="p-4 font-bold text-white">{game.title}</td>
+                                <td className="p-4 text-[#4ade80] font-bold">S/. {game.price}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${game.active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                                        {game.active ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-right space-x-2">
+                                    <button onClick={() => onEdit(game)} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 transition" title="Editar"><Edit size={18}/></button>
+                                    <button onClick={() => onToggleActive(game.id, game.active)} className="p-2 hover:bg-white/10 rounded-lg text-yellow-400 transition" title="Visibilidad"><ToggleRight size={18}/></button>
+                                    <button onClick={() => onDelete(game.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 transition" title="Borrar"><Trash2 size={18}/></button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
+        </div>
+    );
+}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Stock
-              </label>
-              <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
+function PostsTab({ posts, onDelete }) {
+    return (
+        <div className="space-y-6 animate-in fade-in">
+             <h3 className="text-xl font-bold text-white uppercase tracking-wider">Moderación de Posts</h3>
+             <div className="overflow-x-auto rounded-xl border border-white/10">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-white/5 text-xs uppercase text-gray-400 font-bold tracking-wider">
+                        <tr>
+                            <th className="p-4">ID</th>
+                            <th className="p-4">Título</th>
+                            <th className="p-4">Autor</th>
+                            <th className="p-4">Likes</th>
+                            <th className="p-4 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-sm font-sans text-gray-300">
+                        {posts.map((post) => (
+                            <tr key={post.id} className="hover:bg-white/5 transition-colors">
+                                <td className="p-4 font-mono text-gray-500">#{post.id}</td>
+                                <td className="p-4 font-medium text-white truncate max-w-xs">{post.title}</td>
+                                <td className="p-4 text-purple-300">{post.user?.username || 'N/A'}</td>
+                                <td className="p-4 text-gray-400">{post.likeCount}</td>
+                                <td className="p-4 text-right">
+                                    <button onClick={() => onDelete(post.id)} className="p-2 hover:bg-red-900/20 rounded-lg text-red-400 transition" title="Eliminar permanentemente">
+                                        <Trash2 size={18}/>
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+             </div>
+        </div>
+    );
+}
+
+function AuditTab({ logs }) {
+    return (
+        <div className="space-y-6 animate-in fade-in">
+             <h3 className="text-xl font-bold text-white uppercase tracking-wider">Registro de Auditoría</h3>
+             <div className="overflow-x-auto rounded-xl border border-white/10">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-white/5 text-xs uppercase text-gray-400 font-bold tracking-wider">
+                        <tr>
+                            <th className="p-4">Fecha</th>
+                            <th className="p-4">Usuario ID</th>
+                            <th className="p-4">Acción</th>
+                            <th className="p-4">Detalles</th>
+                            <th className="p-4">IP</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-sm font-sans text-gray-300">
+                        {logs.map((log) => (
+                            <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                                <td className="p-4 text-gray-400">{new Date(log.createdAt).toLocaleString()}</td>
+                                <td className="p-4 font-mono text-purple-400">{log.userId || 'SYSTEM'}</td>
+                                <td className="p-4"><span className="px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-[10px] font-bold uppercase">{log.action}</span></td>
+                                <td className="p-4 max-w-md truncate text-gray-400">{log.details}</td>
+                                <td className="p-4 text-gray-500 font-mono text-xs">{log.ipAddress || '-'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+             </div>
+        </div>
+    );
+}
+
+// --- MODAL DE JUEGOS (DARK MODE) ---
+function GameModal({ game, onClose, onSave }) {
+    const [formData, setFormData] = useState({
+        title: game?.title || '',
+        steamAppId: game?.steamAppId || '',
+        shortDescription: game?.shortDescription || '',
+        description: game?.description || '',
+        price: game?.price || 0,
+        category: game?.category || 'ACTION',
+        platform: game?.platform || 'PC',
+        headerImage: game?.headerImage || '',
+        coverImageUrl: game?.coverImageUrl || '',
+        stock: game?.stock || 0,
+        active: game?.active !== undefined ? game.active : true,
+        isFree: game?.isFree || false,
+        featured: game?.featured || false
+    });
+    const [loading, setLoading] = useState(false);
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) || 0 : value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            if (game) await axiosInstance.put(`/admin/games/${game.id}`, formData);
+            else await axiosInstance.post('/admin/games', formData);
+            toast.success('Guardado exitosamente');
+            onSave();
+        } catch (error) { toast.error('Error al guardar'); } 
+        finally { setLoading(false); }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans">
+            <div className="bg-[#151515] border border-white/10 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl text-white">
+                <div className="sticky top-0 bg-[#151515] p-6 border-b border-white/10 flex justify-between items-center z-10">
+                    <h2 className="text-xl font-bold font-orbitron text-purple-400 uppercase tracking-wider">{game ? 'Editar Juego' : 'Nuevo Juego'}</h2>
+                    <button onClick={onClose}><X className="text-gray-400 hover:text-white"/></button>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                     {/* Grid Layout for Inputs */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Título</label>
+                            <input type="text" name="title" value={formData.title} onChange={handleChange} required
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Steam ID</label>
+                            <input type="text" name="steamAppId" value={formData.steamAppId} onChange={handleChange} disabled={!!game}
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none disabled:opacity-50" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Precio</label>
+                            <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Stock</label>
+                            <input type="number" name="stock" value={formData.stock} onChange={handleChange} required
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none" />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">URL Imagen Header</label>
+                            <input type="url" name="headerImage" value={formData.headerImage} onChange={handleChange}
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none" placeholder="https://..." />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Descripción Corta</label>
+                            <textarea name="shortDescription" value={formData.shortDescription} onChange={handleChange} rows={2}
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none resize-none" />
+                        </div>
+                     </div>
+
+                     <div className="flex gap-6 pt-4 border-t border-white/10">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="active" checked={formData.active} onChange={handleChange} className="accent-purple-600 w-4 h-4" />
+                            <span className="text-sm text-gray-300">Activo</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="isFree" checked={formData.isFree} onChange={handleChange} className="accent-purple-600 w-4 h-4" />
+                            <span className="text-sm text-gray-300">Gratis</span>
+                        </label>
+                     </div>
+
+                     <div className="flex justify-end gap-3 pt-2">
+                        <button type="button" onClick={onClose} className="px-6 py-2 border border-white/10 text-gray-300 rounded-lg hover:bg-white/5 text-sm font-bold uppercase">Cancelar</button>
+                        <button type="submit" disabled={loading} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 text-sm font-bold uppercase shadow-lg">
+                            {loading ? 'Guardando...' : 'Guardar Juego'}
+                        </button>
+                     </div>
+                </form>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción Corta
-            </label>
-            <textarea
-              name="shortDescription"
-              value={formData.shortDescription}
-              onChange={handleChange}
-              rows={2}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="flex items-center space-x-6">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="featured"
-                checked={formData.featured}
-                onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">Destacado</span>
-            </label>
-
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="isFree"
-                checked={formData.isFree}
-                onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">Gratis</span>
-            </label>
-
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="active"
-                checked={formData.active}
-                onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">Activo</span>
-            </label>
-          </div>
-
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Guardando...' : (game ? 'Actualizar' : 'Crear')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        </div>
+    );
 }
