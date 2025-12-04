@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '../hooks/useCart';
-import { Loader2, ShoppingCart, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Loader2, ShoppingCart, Trash2, AlertCircle, CreditCard, Gamepad2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import axiosInstance from '../api/axiosConfig'; // Asegúrate de importar axiosInstance
+import homeBg from '../assets/Astrogradiant.png';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { cart, loading, removeFromCart, clearCart, loadCart } = useCart();
   const [processingItems, setProcessingItems] = useState(new Set());
+  const [creatingOrder, setCreatingOrder] = useState(false); // Estado para loading del checkout
 
   useEffect(() => {
     loadCart();
@@ -41,39 +44,30 @@ export default function Cart() {
   };
 
   const handleCheckout = async () => {
+    setCreatingOrder(true);
     try {
-      // Crear la orden desde el carrito
-      const response = await fetch('http://localhost:8080/api/orders/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ paymentMethod: 'PENDING' })
+      // Usamos axiosInstance en lugar de fetch para consistencia con tokens y headers
+      const response = await axiosInstance.post('/orders/checkout', { 
+        paymentMethod: 'PENDING' 
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al crear la orden');
-      }
-
-      const order = await response.json();
+      const order = response.data;
       toast.success('Orden creada. Redirigiendo al pago...');
       
       // Navegar al checkout con el orderId
       navigate(`/checkout?orderId=${order.id}`);
     } catch (error) {
-      toast.error(error.message || 'Error al procesar la orden');
+      console.error('Error en checkout:', error);
+      toast.error(error.response?.data?.message || 'Error al procesar la orden');
+    } finally {
+      setCreatingOrder(false);
     }
   };
 
   if (loading && !cart) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="animate-spin text-primary-600 mx-auto mb-4" size={48} />
-          <p className="text-gray-600">Cargando tu carrito...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <Loader2 className="animate-spin text-purple-600" size={48} />
       </div>
     );
   }
@@ -81,100 +75,118 @@ export default function Cart() {
   const isEmpty = !cart || !cart.items || cart.items.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-gray-600 hover:text-primary-600 mb-4 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            Volver al catálogo
-          </button>
-          <h1 className="text-4xl font-bold text-gray-900">
-            Carrito de Compras
-          </h1>
+    <div className="min-h-screen text-white font-orbitron pb-10 bg-cover bg-no-repeat"
+         style={{ 
+             backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${homeBg})`,
+             backgroundPosition: 'center 0px'
+         }}>
+      
+      {/* CAMBIO: Eliminada la barra de navegación "Volver al catálogo" que estaba aquí */}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header Title */}
+        <div className="mb-8 flex items-center justify-between mt-8"> {/* Agregado mt-8 para compensar la falta de nav */}
+          <div>
+              <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#d946ef] to-[#8b5cf6] drop-shadow-[0_0_15px_rgba(217,70,239,0.5)]"
+                  style={{ textShadow: "0px 0px 20px rgba(168, 85, 247, 0.6)" }}>
+                CARRITO DE COMPRAS
+              </h1>
+              {!isEmpty && (
+                <p className="text-gray-400 mt-2 text-sm tracking-wider">
+                  TIENES <span className="text-white font-bold">{cart.itemCount}</span> {cart.itemCount === 1 ? 'PRODUCTO' : 'PRODUCTOS'} EN TU CARRITO
+                </p>
+              )}
+          </div>
           {!isEmpty && (
-            <p className="text-gray-600 mt-2">
-              {cart.itemCount} {cart.itemCount === 1 ? 'producto' : 'productos'} en tu carrito
-            </p>
+             <div className="hidden md:block">
+                 <ShoppingCart size={48} className="text-purple-500/20" />
+             </div>
           )}
         </div>
 
         {isEmpty ? (
-          // Carrito vacío
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <ShoppingCart className="mx-auto text-gray-400 mb-4" size={64} />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          // --- CARRITO VACÍO ---
+          <div className="bg-black/60 backdrop-blur-md rounded-[30px] shadow-xl border border-white/10 p-12 text-center flex flex-col items-center mt-10">
+            <div className="w-24 h-24 bg-black/50 rounded-full flex items-center justify-center mb-6 border-2 border-white/10">
+                <Gamepad2 className="text-gray-600" size={48} />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">
               Tu carrito está vacío
             </h2>
-            <p className="text-gray-600 mb-6">
-              Agrega algunos juegos increíbles para comenzar tu compra
+            <p className="text-gray-400 mb-8 max-w-md font-sans">
+              Parece que aún no has agregado ninguna aventura a tu colección. ¡Explora el catálogo y encuentra tu próximo desafío!
             </p>
             <button
               onClick={() => navigate('/')}
-              className="bg-primary-600 text-white px-8 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+              className="bg-purple-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-purple-500 transition-all shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]"
             >
               Explorar juegos
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Items del carrito */}
+            
+            {/* --- LISTA DE ITEMS (IZQUIERDA) --- */}
             <div className="lg:col-span-2 space-y-4">
               {cart.items.map((item) => (
                 <div
                   key={item.id}
-                  className={`bg-white rounded-xl shadow-lg p-6 transition-all ${
+                  className={`bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 p-4 flex flex-col sm:flex-row gap-4 transition-all group hover:border-purple-500/30 ${
                     processingItems.has(item.id) ? 'opacity-50 pointer-events-none' : ''
                   }`}
                 >
-                  <div className="flex gap-4">
-                    {/* Imagen */}
-                    <img
+                  {/* Imagen */}
+                  <div className="w-full sm:w-40 h-24 rounded-lg overflow-hidden relative flex-shrink-0 cursor-pointer border border-white/5 group-hover:border-white/20 transition-all"
+                       onClick={() => navigate(`/game/${item.game.id}`)}>
+                     <img
                       src={item.game.headerImage}
                       alt={item.game.title}
-                      className="w-32 h-20 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => navigate(`/game/${item.game.id}`)}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/128x80/1e3a8a/ffffff?text=No+Image';
                       }}
                     />
+                  </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 
-                        className="text-lg font-bold text-gray-900 mb-2 truncate cursor-pointer hover:text-primary-600 transition-colors"
-                        onClick={() => navigate(`/game/${item.game.id}`)}
-                      >
-                        {item.game.title}
-                      </h3>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        {/* Precio y acciones */}
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-primary-600">
-                              S/. {parseFloat(item.subtotal).toFixed(2)}
-                            </p>
-                          </div>
-
-                          {/* Botón eliminar */}
-                          <button
+                  {/* Info */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div className="flex justify-between items-start gap-4">
+                        <div>
+                            <h3 
+                                className="text-lg font-bold text-white truncate cursor-pointer hover:text-purple-400 transition-colors uppercase tracking-wide"
+                                onClick={() => navigate(`/game/${item.game.id}`)}
+                            >
+                                {item.game.title}
+                            </h3>
+                            <div className="flex gap-2 mt-1">
+                                {item.game.genres && item.game.genres.split(',').slice(0, 2).map((g, i) => (
+                                    <span key={i} className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-gray-400 border border-white/5">
+                                        {g.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Botón eliminar */}
+                        <button
                             onClick={() => handleRemoveItem(item.id)}
                             disabled={processingItems.has(item.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="text-gray-500 hover:text-red-500 transition-colors p-2 hover:bg-red-500/10 rounded-lg"
                             title="Eliminar del carrito"
-                          >
+                        >
                             {processingItems.has(item.id) ? (
-                              <Loader2 className="animate-spin" size={20} />
+                                <Loader2 className="animate-spin" size={18} />
                             ) : (
-                              <Trash2 size={20} />
+                                <Trash2 size={18} />
                             )}
-                          </button>
-                        </div>
-                      </div>
+                        </button>
+                    </div>
+
+                    <div className="flex justify-end items-end mt-2 sm:mt-0">
+                        <p className="text-xl font-black text-[#4ade80] drop-shadow-[0_0_5px_rgba(74,222,128,0.3)]">
+                            S/. {parseFloat(item.subtotal).toFixed(2)}
+                        </p>
                     </div>
                   </div>
                 </div>
@@ -185,100 +197,101 @@ export default function Cart() {
                 <button
                   onClick={handleClearCart}
                   disabled={loading}
-                  className="w-full py-3 border-2 border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-3 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/10 transition-colors font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-4"
                 >
-                  <Trash2 size={18} />
-                  Vaciar carrito
+                  <Trash2 size={16} />
+                  Vaciar todo el carrito
                 </button>
               )}
             </div>
 
-            {/* Resumen */}
+            {/* --- RESUMEN (DERECHA) --- */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Resumen del pedido
+              <div className="bg-[#151515] border border-white/10 rounded-[30px] p-6 sticky top-24 shadow-xl">
+                <h2 className="text-lg font-bold text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-4" 
+                    style={{ fontFamily: '"Press Start 2P", cursive', lineHeight: '1.5' }}>
+                  RESUMEN
                 </h2>
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-gray-700">
+                <div className="space-y-4 mb-8 font-sans text-sm">
+                  <div className="flex justify-between text-gray-400">
                     <span>Subtotal</span>
-                    <span className="font-semibold">
+                    <span className="text-white font-bold">
                       S/. {parseFloat(cart.total).toFixed(2)}
                     </span>
                   </div>
                   
-                  <div className="flex justify-between text-gray-700">
-                    <span>Items</span>
-                    <span className="font-semibold">{cart.itemCount}</span>
+                  <div className="flex justify-between text-gray-400">
+                    <span>Cantidad</span>
+                    <span className="text-white font-bold">{cart.itemCount} juegos</span>
                   </div>
                   
-                  <div className="flex justify-between text-sm text-gray-500">
+                  <div className="flex justify-between text-gray-400">
                     <span>Envío</span>
-                    <span className="text-green-600 font-medium">Gratis (Digital)</span>
+                    <span className="text-[#4ade80] font-bold text-xs uppercase">Digital / Inmediato</span>
                   </div>
                   
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>Impuestos</span>
-                    <span>Incluidos</span>
-                  </div>
-
-                  <div className="border-t pt-4">
+                  <div className="border-t border-white/10 pt-4 mt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-gray-900">Total</span>
-                      <span className="text-3xl font-bold text-primary-600">
+                      <span className="text-lg font-bold text-white uppercase tracking-wide">Total</span>
+                      <span className="text-2xl font-black text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.4)]">
                         S/. {parseFloat(cart.total).toFixed(2)}
                       </span>
                     </div>
+                    <p className="text-[10px] text-gray-500 text-right mt-1">Impuestos incluidos</p>
                   </div>
                 </div>
 
                 <button
                   onClick={handleCheckout}
-                  className="w-full bg-primary-600 text-white py-4 rounded-lg font-bold hover:bg-primary-700 transition-colors shadow-lg hover:shadow-xl mb-3"
+                  disabled={creatingOrder}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-[0_0_30px_rgba(147,51,234,0.6)] flex items-center justify-center gap-2 mb-4 disabled:opacity-50"
                 >
-                  Proceder al pago
+                  {creatingOrder ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      PROCESANDO...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={18} />
+                      PAGAR AHORA
+                    </>
+                  )}
                 </button>
 
                 <button
                   onClick={() => navigate('/')}
-                  className="w-full border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="w-full bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors"
                 >
-                  Continuar comprando
+                  Seguir comprando
                 </button>
 
                 {/* Información adicional */}
-                <div className="mt-6 space-y-3">
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex gap-2">
-                      <AlertCircle size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-blue-900 mb-1">
-                          Entrega Digital Instantánea
-                        </p>
-                        <p className="text-xs text-blue-700">
-                          Recibirás los juegos inmediatamente después del pago
-                        </p>
-                      </div>
+                <div className="mt-8 space-y-3">
+                  <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg flex gap-3">
+                    <AlertCircle size={18} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-blue-200 mb-1 uppercase">Entrega Inmediata</p>
+                      <p className="text-[10px] text-blue-300/80 font-sans leading-tight">
+                        Tus juegos estarán disponibles en tu biblioteca automáticamente después del pago.
+                      </p>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex gap-2">
-                      <AlertCircle size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-green-900 mb-1">
-                          Garantía de 30 días
-                        </p>
-                        <p className="text-xs text-green-700">
-                          Reembolso completo si no estás satisfecho
-                        </p>
-                      </div>
+                  <div className="p-3 bg-green-900/20 border border-green-500/30 rounded-lg flex gap-3">
+                    <CheckCircle size={18} className="text-green-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-green-200 mb-1 uppercase">Compra Segura</p>
+                      <p className="text-[10px] text-green-300/80 font-sans leading-tight">
+                        Transacciones encriptadas y garantía de satisfacción.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+
           </div>
         )}
       </div>

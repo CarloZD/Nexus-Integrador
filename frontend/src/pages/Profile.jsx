@@ -13,6 +13,9 @@ export default function Profile() {
   const [currentUser] = useState(() => getCurrentUser());
   const [profile, setProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  // NUEVO: Estado para las estadísticas (cantidad de juegos, etc.)
+  const [stats, setStats] = useState(null); 
+  
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({
@@ -39,6 +42,7 @@ export default function Profile() {
   useEffect(() => {
     loadProfile();
     loadFavorites();
+    loadStats(); // NUEVO: Cargar las estadísticas al iniciar
   }, []);
 
   const loadProfile = async () => {
@@ -64,6 +68,16 @@ export default function Profile() {
       setFavorites(response.data);
     } catch (error) {
       console.error('Error loading favorites:', error);
+    }
+  };
+
+  // NUEVO: Función para cargar estadísticas de la biblioteca
+  const loadStats = async () => {
+    try {
+      const response = await axiosInstance.get('/library/stats');
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
@@ -205,7 +219,6 @@ export default function Profile() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         
         {/* --- HEADER DEL PERFIL --- */}
-        {/* CAMBIO: bg-black para fondo negro sólido en el cuadro de abajo */}
         <div className="bg-black rounded-[40px] shadow-2xl overflow-hidden pb-8">
           {/* Banner decorativo con gradiente */}
           <div className="bg-gradient-to-r from-purple-900 via-blue-900 to-black h-64 relative">
@@ -252,13 +265,12 @@ export default function Profile() {
                   </label>
                 </div>
 
-                {/* CAMBIO: mb-10 para subir el nombre más arriba */}
-                <div className="text-center sm:text-left mb-15">
+                  <div className="text-center sm:text-left mb-15">
                   <h1 className="text-4xl md:text-5xl font-black text-white tracking-wide uppercase drop-shadow-md">
                     {profile.fullName}
                   </h1>
                   
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-16">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-14">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                       profile.role === 'ADMIN' 
                         ? 'bg-purple-500/20 border-purple-500 text-purple-300'
@@ -274,7 +286,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[12px]">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[11px]">
                 <button
                   onClick={() => setEditMode(!editMode)}
                   className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl font-bold text-xs uppercase tracking-wider hover:text-purple-600 hover:border-purple-600 transition-all flex items-center justify-center gap-2"
@@ -297,7 +309,7 @@ export default function Profile() {
         {/* --- FORMULARIO DE EDICIÓN (MODO OSCURO) --- */}
         {editMode && (
           <div className="bg-[#1a1a1a]/80 backdrop-blur-md rounded-2xl border border-white/10 p-6 animate-in fade-in slide-in-from-top-4">
-            <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between mb-6 border-b border-white/10 p-6 animate-in fade-in slide-in-from-top-4">
               <h2 className="text-lg font-bold text-purple-400 uppercase tracking-wider">Editar Información</h2>
               <button onClick={() => setEditMode(false)} className="text-gray-400 hover:text-white transition">
                 <X size={20} />
@@ -393,14 +405,14 @@ export default function Profile() {
         )}
 
         {/* --- STATS GRID --- */}
-        {/* CAMBIO: Se cambió el grid a md:grid-cols-2 y se eliminó la tarjeta de Favoritos pequeña */}
         <div className="grid gap-6 md:grid-cols-2">
           <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center hover:border-blue-500/30 transition-all shadow-lg group">
             <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                <ShoppingBag className="text-blue-400" size={24} />
             </div>
             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1" style={{ fontFamily: '"Press Start 2P", cursive' }}>Biblioteca</p>
-            <p className="text-2xl font-black text-white drop-shadow-md">0 Juegos</p>
+            {/* CAMBIO: Usando stats.totalGames si existen, sino 0 */}
+            <p className="text-2xl font-black text-white drop-shadow-md">{stats?.totalGames || 0} Juegos</p>
           </div>
 
           <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center hover:border-green-500/30 transition-all shadow-lg group">
