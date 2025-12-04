@@ -64,6 +64,10 @@ cd nexus
 ./mvnw spring-boot:run
 ```
 **En Windows:** usar `mvnw.cmd` en lugar de `./mvnw`
+```bash
+mvnw.cmd clean install
+mvnw.cmd spring-boot:run
+```
 
 ### 5️⃣ Configurar Frontend
 
