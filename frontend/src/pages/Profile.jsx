@@ -13,9 +13,6 @@ export default function Profile() {
   const [currentUser] = useState(() => getCurrentUser());
   const [profile, setProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  // NUEVO: Estado para las estadísticas (cantidad de juegos, etc.)
-  const [stats, setStats] = useState(null); 
-  
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({
@@ -42,7 +39,6 @@ export default function Profile() {
   useEffect(() => {
     loadProfile();
     loadFavorites();
-    loadStats(); // NUEVO: Cargar las estadísticas al iniciar
   }, []);
 
   const loadProfile = async () => {
@@ -68,16 +64,6 @@ export default function Profile() {
       setFavorites(response.data);
     } catch (error) {
       console.error('Error loading favorites:', error);
-    }
-  };
-
-  // NUEVO: Función para cargar estadísticas de la biblioteca
-  const loadStats = async () => {
-    try {
-      const response = await axiosInstance.get('/library/stats');
-      setStats(response.data);
-    } catch (error) {
-      console.error('Error loading stats:', error);
     }
   };
 
@@ -411,8 +397,7 @@ export default function Profile() {
                <ShoppingBag className="text-blue-400" size={24} />
             </div>
             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1" style={{ fontFamily: '"Press Start 2P", cursive' }}>Biblioteca</p>
-            {/* CAMBIO: Usando stats.totalGames si existen, sino 0 */}
-            <p className="text-2xl font-black text-white drop-shadow-md">{stats?.totalGames || 0} Juegos</p>
+            <p className="text-2xl font-black text-white drop-shadow-md">0 Juegos</p>
           </div>
 
           <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center hover:border-green-500/30 transition-all shadow-lg group">

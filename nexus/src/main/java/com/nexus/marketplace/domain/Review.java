@@ -39,6 +39,9 @@ public class Review {
     @Column(nullable = false)
     private Integer helpful = 0; // Contador de "útil"
 
+    @Column(name = "comment_count", nullable = false)
+    private Integer commentCount = 0; // Contador de comentarios en la reseña
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -52,5 +55,7 @@ public class Review {
     private void validateRating() {
         if (rating < 1) rating = 1;
         if (rating > 5) rating = 5;
+        if (helpful == null) helpful = 0;
+        if (commentCount == null) commentCount = 0;
     }
 }

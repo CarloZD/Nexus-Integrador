@@ -64,6 +64,12 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
     if (!token) return toast.error('Debes iniciar sesión');
     if (!userOwnsGame) return toast.error('Debes poseer el juego');
     if (!reviewText.trim()) return toast.error('Escribe tu reseña');
+    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
+      return toast.error('La calificación debe estar entre 1 y 5 estrellas');
+    }
+    if (!gameId) {
+      return toast.error('Error: ID del juego no válido');
+    }
 
     setSubmittingReview(true);
     try {
@@ -79,7 +85,11 @@ export default function ReviewSection({ gameId, userOwnsGame = false }) {
       await loadReviews();
       await loadReviewStats();
     } catch (error) {
-      toast.error('Error al publicar reseña');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error al publicar reseña';
+      toast.error(errorMessage);
+      console.error('Error al publicar reseña:', error);
     } finally {
       setSubmittingReview(false);
     }

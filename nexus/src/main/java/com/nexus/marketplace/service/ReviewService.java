@@ -55,6 +55,7 @@ public class ReviewService {
         review.setRating(request.getRating());
         review.setComment(request.getComment());
         review.setHelpful(0);
+        review.setCommentCount(0);
 
         review = reviewRepository.save(review);
 
