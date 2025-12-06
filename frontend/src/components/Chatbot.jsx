@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, LogIn } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Sparkles, Loader2 } from 'lucide-react';
 import axiosInstance from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
@@ -43,7 +43,6 @@ export default function Chatbot() {
     
     if (!inputMessage.trim() || isLoading) return;
 
-    // Verificar autenticación antes de enviar
     if (!isAuthenticated()) {
       toast.error('Debes iniciar sesión para usar el chatbot');
       setShowLoginModal(true);
@@ -54,7 +53,6 @@ export default function Chatbot() {
     const userMessage = inputMessage.trim();
     setInputMessage('');
     
-    // Agregar mensaje del usuario
     const newUserMessage = {
       role: 'user',
       content: userMessage,
@@ -79,21 +77,17 @@ export default function Chatbot() {
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
       
-      // Si el error es 401 (no autenticado), cerrar el chatbot y mostrar login
       if (error.response?.status === 401) {
         toast.error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
         setIsOpen(false);
         setShowLoginModal(true);
         setMessages([]);
       } else {
-        toast.error('Error al comunicarse con el chatbot. Por favor, intenta de nuevo.');
-        
         const errorMessage = {
           role: 'bot',
-          content: 'Lo siento, ocurrió un error al procesar tu mensaje. Por favor, intenta de nuevo.',
+          content: 'Lo siento, mis circuitos están fallando. Por favor intenta de nuevo más tarde.',
           timestamp: new Date()
         };
-        
         setMessages(prev => [...prev, errorMessage]);
       }
     } finally {
@@ -102,11 +96,9 @@ export default function Chatbot() {
   };
 
   const formatMessage = (text) => {
-    // Dividir el texto en párrafos
     const paragraphs = text.split('\n\n').filter(p => p.trim());
-    
     return paragraphs.map((paragraph, index) => (
-      <p key={index} className={index > 0 ? 'mt-3' : ''}>
+      <p key={index} className={index > 0 ? 'mt-2' : ''}>
         {paragraph.split('\n').map((line, lineIndex, array) => (
           <span key={lineIndex}>
             {line}
@@ -124,54 +116,70 @@ export default function Chatbot() {
         onClose={() => setShowLoginModal(false)} 
       />
       
-      {/* Botón flotante - siempre visible */}
+      {/* BOTÓN FLOTANTE NEXUS STYLE */}
       <button
         onClick={handleOpenChatbot}
-        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group"
+        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.5)] transition-all duration-300 hover:scale-110 group flex items-center justify-center border-white/10
+          ${isOpen 
+            ? 'bg-red-600 hover:bg-red-500 rotate-90 shadow-[0_0_20px_rgba(239,68,68,0.5)]' 
+            : 'bg-gradient-to-r from-black to-purple-700 hover:shadow-[0_0_30px_rgba(147,51,234,0.8)]'
+          }`}
         aria-label="Abrir chatbot"
       >
         {isOpen ? (
-          <X className="w-6 h-6" />
+          <X className="w-6 h-6 text-white" />
         ) : (
           <>
-            <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-              <Bot className="w-3 h-3" />
+            <Bot className="w-6 h-6 text-white" />
+            {/* Indicador de estado */}
+            <span className="absolute top-0 right-0 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-black"></span>
             </span>
           </>
         )}
       </button>
 
-      {/* Ventana del chatbot - solo visible si está autenticado */}
+      {/* VENTANA DEL CHATBOT */}
       {isOpen && isAuthenticated() && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bot className="w-5 h-5" />
-              <h3 className="font-semibold text-lg">NexusBot</h3>
+        <div className="fixed bottom-24 right-4 md:right-6 z-50 w-[350px] md:w-[400px] h-[550px] max-h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 border border-white/10 bg-[#0a0a0a]/90 backdrop-blur-xl font-sans">
+          
+          {/* Header Futurista */}
+          <div className="bg-gradient-to-r from-purple-900/90 to-black p-4 flex items-center justify-between border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-black border border-purple-500 flex items-center justify-center shadow-[0_0_10px_rgba(168,85,247,0.5)] relative overflow-hidden">
+                <div className="absolute inset-0 bg-purple-500/20 animate-pulse"></div>
+                <Bot className="w-6 h-6 text-purple-400 relative z-10" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm tracking-wider" style={{ fontFamily: '"Press Start 2P", cursive' }}>NEXUS AI</h3>
+                <div className="flex items-center gap-1.5 mt-1">
+                   <span className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-pulse shadow-[0_0_5px_#4ade80]"></span>
+                   <span className="text-[9px] text-[#4ade80] font-bold uppercase tracking-wide">Online</span>
+                </div>
+              </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-white/20 rounded-full p-1 transition-colors"
-              aria-label="Cerrar chatbot"
+              className="text-gray-400 hover:text-white transition-colors hover:bg-white/10 p-1 rounded-lg"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Mensajes */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          {/* Área de Mensajes */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-900 scrollbar-track-black/50">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                <Bot className="w-12 h-12 mb-3 text-purple-500" />
-                <p className="text-lg font-semibold mb-2">¡Hola! 👋</p>
-                <p className="text-sm">
-                  Soy NexusBot, tu asistente virtual. Estoy aquí para ayudarte a encontrar los juegos perfectos.
-                </p>
-                <p className="text-sm mt-2">
-                  ¿Qué tipo de juegos te interesan?
-                </p>
+              <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 space-y-4 p-6">
+                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner">
+                    <Sparkles className="w-10 h-10 text-purple-500 animate-pulse" />
+                </div>
+                <div>
+                    <p className="text-lg font-bold text-white mb-2" style={{ fontFamily: '"Orbitron", sans-serif' }}>¡HOLA GAMER!</p>
+                    <p className="text-xs text-gray-400 leading-relaxed max-w-[250px] mx-auto">
+                      Soy tu asistente Nexus. Pregúntame sobre recomendaciones, precios o detalles de tus juegos favoritos.
+                    </p>
+                </div>
               </div>
             ) : (
               messages.map((message, index) => (
@@ -180,32 +188,37 @@ export default function Chatbot() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-md border ${
                       message.role === 'user'
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                        : 'bg-white text-gray-800 shadow-md border border-gray-200'
+                        ? 'bg-gradient-to-br from-purple-700 to-blue-700 text-white rounded-tr-none border-transparent'
+                        : 'bg-[#111] text-gray-200 border-white/10 rounded-tl-none'
                     }`}
                   >
                     {message.role === 'bot' && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bot className="w-4 h-4 text-purple-500" />
-                        <span className="text-xs font-semibold text-purple-600">NexusBot</span>
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
+                        <Bot className="w-3 h-3 text-purple-400" />
+                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">NexusBot</span>
                       </div>
                     )}
-                    <div className="text-sm leading-relaxed">
+                    <div className="font-sans">
                       {formatMessage(message.content)}
                     </div>
+                    <p className={`text-[9px] mt-2 text-right ${message.role === 'user' ? 'text-white/50' : 'text-gray-600'}`}>
+                        {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </p>
                   </div>
                 </div>
               ))
             )}
             
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white text-gray-800 rounded-lg px-4 py-2 shadow-md border border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-purple-500 animate-pulse" />
-                    <span className="text-sm text-gray-600">Escribiendo...</span>
+              <div className="flex justify-start animate-pulse">
+                <div className="bg-[#111] border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-500" />
+                  <div className="flex space-x-1">
+                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
                 </div>
               </div>
@@ -214,24 +227,24 @@ export default function Chatbot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-200">
-            <div className="flex gap-2">
+          {/* Input Area */}
+          <form onSubmit={handleSendMessage} className="p-4 bg-[#0a0a0a] border-t border-white/10">
+            <div className="relative flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Escribe tu mensaje..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full bg-[#151515] text-white border border-white/10 rounded-xl pl-4 pr-12 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-gray-600 text-sm font-sans"
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={isLoading || !inputMessage.trim()}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                className="absolute right-2 p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 disabled:bg-transparent disabled:text-gray-600 transition-all shadow-[0_0_10px_rgba(147,51,234,0.3)]"
               >
-                <Send className="w-5 h-5" />
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </div>
           </form>
@@ -240,4 +253,3 @@ export default function Chatbot() {
     </>
   );
 }
-

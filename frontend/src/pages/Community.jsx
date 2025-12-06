@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Heart, Eye, Send, Loader2, Plus, X, User, Image as ImageIcon, Trash2 } from 'lucide-react';
 import axiosInstance from '../api/axiosConfig';
 import toast from 'react-hot-toast';
+import { useAuth } from '../hooks/useAuth';
+import Footer from '../components/common/Footer';
 import homeBg from '../assets/Astrogradiant.png';
 
-// Función helper para construir la URL completa de las imágenes
 const getImageUrl = (imageUrl) => {
   if (!imageUrl) return null;
   
@@ -29,8 +30,9 @@ export default function Community() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   
+  const { isAuthenticated, getCurrentUser } = useAuth();
   const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
 
   useEffect(() => {
     loadPosts();
@@ -81,13 +83,14 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen text-white font-orbitron pb-10 bg-cover bg-no-repeat"
+    <div className="min-h-screen text-white font-orbitron bg-cover bg-no-repeat"
          style={{ 
              backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url(${homeBg})`,
              backgroundPosition: 'center 0px'
          }}>
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* CAMBIO: Agregado pb-20 al contenedor interno */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         
         {/* HEADER */}
         <div className="py-10 text-center relative mb-8">
@@ -152,6 +155,9 @@ export default function Community() {
           />
         )}
       </div>
+
+      <Footer />
+
     </div>
   );
 }
@@ -257,7 +263,6 @@ function PostCard({ post, onLike, onView, isLoggedIn }) {
   );
 }
 
-// Create Post Modal (DARK MODE + SCROLLBAR PERSONALIZADO)
 function CreatePostModal({ onClose, onCreated }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -336,7 +341,6 @@ function CreatePostModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-orbitron">
-      {/* CAMBIO: Scrollbar personalizado forzado con clases arbitrarias de Tailwind */}
       <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl max-w-lg w-full p-6 max-h-[95vh] overflow-y-auto shadow-2xl text-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-purple-500">
         <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-[#1a1a1a] z-10">
           <h2 className="text-xl font-bold tracking-wider text-purple-400">NUEVO POST</h2>
@@ -384,7 +388,6 @@ function CreatePostModal({ onClose, onCreated }) {
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:bg-white/5 transition">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <ImageIcon className="w-8 h-8 mb-2 text-purple-400" />
-                  {/* CAMBIO: Todo el texto morado */}
                   <p className="text-xs font-bold text-purple-400">Click para subir o arrastra</p>
                 </div>
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
@@ -427,7 +430,6 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
       toast.success('Comentario agregado');
       setComment('');
       onUpdate();
-      // Actualizar localmente si es necesario o esperar reload del padre
     } catch (error) {
       toast.error('Error al comentar');
     } finally {
@@ -437,10 +439,8 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 font-orbitron">
-      {/* CAMBIO: Scrollbar personalizado forzado */}
       <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl text-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-purple-500">
         
-        {/* Header Modal */}
         <div className="sticky top-0 bg-[#1a1a1a]/95 backdrop-blur border-b border-white/10 p-4 flex justify-between items-center z-10">
           <h2 className="text-lg font-bold truncate pr-4 text-purple-300">{post.title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition bg-white/5 p-1 rounded-full">
@@ -449,7 +449,6 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
         </div>
 
         <div className="p-6">
-          {/* Author Info */}
           <div className="flex items-center gap-4 mb-6">
             {post.user?.avatarUrl ? (
               <img
@@ -468,7 +467,6 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
             </div>
           </div>
 
-          {/* Image */}
           {post.imageUrl && (
             <img 
               src={getImageUrl(post.imageUrl)}
@@ -477,19 +475,16 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
             />
           )}
 
-          {/* Content */}
           <div className="text-gray-300 whitespace-pre-wrap mb-8 font-sans leading-relaxed text-sm md:text-base bg-black/30 p-4 rounded-xl border border-white/5">
             {post.content}
           </div>
 
-          {/* Stats */}
           <div className="flex gap-6 text-sm text-gray-400 border-t border-white/10 pt-4 mb-6 font-bold">
             <span className="flex items-center gap-2"><Heart size={16} className="text-red-500" /> {post.likeCount} LIKES</span>
             <span className="flex items-center gap-2"><MessageSquare size={16} className="text-blue-400" /> {post.commentCount} COMENTARIOS</span>
             <span className="flex items-center gap-2"><Eye size={16} className="text-green-400" /> {post.viewCount} VISTAS</span>
           </div>
 
-          {/* Comments Section */}
           <h3 className="font-bold mb-4 text-purple-400 border-b border-white/10 pb-2">COMENTARIOS</h3>
           
           {post.comments?.length > 0 ? (
@@ -515,7 +510,6 @@ function ViewPostModal({ post, onClose, onUpdate, isLoggedIn }) {
              <p className="text-gray-500 text-sm italic mb-8 text-center">Sé el primero en comentar.</p>
           )}
 
-          {/* Add Comment Input */}
           {isLoggedIn ? (
             <form onSubmit={handleComment} className="flex gap-3 sticky bottom-0 bg-[#1a1a1a] pt-4 border-t border-white/10">
               <input

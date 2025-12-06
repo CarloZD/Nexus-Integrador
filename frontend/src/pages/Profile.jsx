@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // <--- 1. IMPORTADO
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import axiosInstance from '../api/axiosConfig';
@@ -9,11 +10,13 @@ import {
 import homeBg from '../assets/Astrogradiant.png';
 
 export default function Profile() {
+  const navigate = useNavigate(); // <--- 2. INICIALIZADO
   const { getCurrentUser } = useAuth();
   const [currentUser] = useState(() => getCurrentUser());
   const [profile, setProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  const [libraryStats, setLibraryStats] = useState(null);
+  const [libraryStats, setLibraryStats] = useState(null); // Nota: Mantuve tu estado libraryStats aunque en el render usas stats
+  const [stats, setStats] = useState(null); // Agregué stats para compatibilidad con tu render de abajo
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({
@@ -70,13 +73,14 @@ export default function Profile() {
   };
 
   const loadLibraryStats = async () => {
-  try {
-    const response = await axiosInstance.get('/library/stats');
-    setLibraryStats(response.data);
-  } catch (error) {
-    console.error('Error loading library stats:', error);
-  }
-};
+    try {
+      const response = await axiosInstance.get('/library/stats');
+      setLibraryStats(response.data);
+      setStats(response.data); // Sincronizamos para que se vea en el render
+    } catch (error) {
+      console.error('Error loading library stats:', error);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -262,15 +266,15 @@ export default function Profile() {
                   </label>
                 </div>
 
-                  <div className="text-center sm:text-left mb-15">
+                <div className="text-center sm:text-left mb-10">
                   <h1 className="text-4xl md:text-5xl font-black text-white tracking-wide uppercase drop-shadow-md">
                     {profile.fullName}
                   </h1>
                   
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-14">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-10">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                       profile.role === 'ADMIN' 
-                        ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                        ? 'bg-purple-500/20 border-purple-600 text-purple-300'
                         : 'bg-blue-500/20 border-blue-500 text-blue-300'
                     }`}>
                       {profile.role === 'ADMIN' ? 'Administrador' : 'Gamer'}
@@ -283,7 +287,16 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[11px]">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[0px]">
+                {/* --- 3. BOTÓN MIS ÓRDENES AGREGADO --- */}
+                <button
+                  onClick={() => navigate('/my-orders')}
+                  className="px-6 py-3 bg-purple-700 hover:bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <ShoppingBag size={16} />
+                  Mis Órdenes
+                </button>
+                
                 <button
                   onClick={() => setEditMode(!editMode)}
                   className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl font-bold text-xs uppercase tracking-wider hover:text-purple-600 hover:border-purple-600 transition-all flex items-center justify-center gap-2"
@@ -306,7 +319,7 @@ export default function Profile() {
         {/* --- FORMULARIO DE EDICIÓN (MODO OSCURO) --- */}
         {editMode && (
           <div className="bg-[#1a1a1a]/80 backdrop-blur-md rounded-2xl border border-white/10 p-6 animate-in fade-in slide-in-from-top-4">
-            <div className="flex items-center justify-between mb-6 border-b border-white/10 p-6 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
               <h2 className="text-lg font-bold text-purple-400 uppercase tracking-wider">Editar Información</h2>
               <button onClick={() => setEditMode(false)} className="text-gray-400 hover:text-white transition">
                 <X size={20} />
@@ -408,9 +421,7 @@ export default function Profile() {
                <ShoppingBag className="text-blue-400" size={24} />
             </div>
             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1" style={{ fontFamily: '"Press Start 2P", cursive' }}>Biblioteca</p>
-            <p className="text-2xl font-black text-white drop-shadow-md">
-              {libraryStats ? `${libraryStats.totalGames} Juegos` : 'Cargando...'}
-            </p>
+            <p className="text-2xl font-black text-white drop-shadow-md">{stats?.totalGames || 0} Juegos</p>
           </div>
 
           <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center hover:border-green-500/30 transition-all shadow-lg group">

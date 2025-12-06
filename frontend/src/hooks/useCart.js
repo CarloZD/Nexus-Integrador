@@ -43,7 +43,7 @@ export const useCart = () => {
       setLoading(true);
       const data = await cartApi.addToCart(gameId, quantity);
       setCart(data);
-      toast.success('Juego agregado al carrito');
+      toast.success('agregado al carrito');
       return data;
     } catch (error) {
       console.error('Error adding to cart:', error);

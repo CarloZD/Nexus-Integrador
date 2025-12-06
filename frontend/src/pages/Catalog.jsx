@@ -4,6 +4,7 @@ import { gameApi } from '../api/gameApi';
 import axiosInstance from '../api/axiosConfig'; 
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
+import Footer from '../components/common/Footer';
 
 import homeBg from '../assets/Astrogradiant.png'; 
 
@@ -25,7 +26,7 @@ export default function Catalog() {
   const user = getCurrentUser();
 
   const availableGenres = [
-'ACTION', 'ADVENTURE', 'RPG', 'STRATEGY', 'INDIE', 
+    'ACTION', 'ADVENTURE', 'RPG', 'STRATEGY', 'INDIE', 
     'SHOOTER', 'PUZZLE', 'PLATFORMER', 'ROGUELIKE', 
     'SIMULATION', 'MOBA', 'FPS', 'BATTLE ROYALE', 
     'SURVIVAL', 'HORROR'
@@ -38,14 +39,14 @@ export default function Catalog() {
       date: '14 mayo 2025',
       title: 'Monster Hunter Wilds revela tráiler extendido',
       desc: 'Nuevos monstruos y mapas dinámicos. Disponible en YouTube.',
-      img: 'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2023/12/monster-hunter-wilds-3242388.jpg?tf=3840x'
+      img: 'https://i.ytimg.com/vi/XmQnVA4IqSY/maxresdefault.jpg'
     },
     {
       id: 2,
-      date: '10 mayo 2025',
-      title: 'GTA V recibe parche 1.69: mejoras gráficas',
-      desc: 'Balance de armas en el modo online y ray tracing optimizado.',
-      img: 'https://media.rockstargames.com/rockstargames-newsite/uploads/d3a5f7823d04068525b6a50614eb585356501168.jpg'
+      date: '26 octubre 2025',
+      title: '¡GTA VI se prepara para el 2026!',
+      desc: 'la empresa rockstar games anuncia el lanzamiento de gta vi para el próximo año.',
+      img: 'https://alfabetajuega.com/hero/2025/05/gta6.1747223093.7085.jpg?width=768&aspect_ratio=16:9&format=nowebp'
     },
     {
       id: 3,
@@ -193,13 +194,14 @@ export default function Catalog() {
   }
 
   return (
-    <div className="min-h-screen text-white font-orbitron pb-10 bg-cover bg-no-repeat"
+    <div className="min-h-screen text-white font-orbitron bg-cover bg-no-repeat"
          style={{ 
-             backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url(${homeBg})`,
-             backgroundPosition: 'center 0px'
+             backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.51), rgba(0, 0, 0, 0.51)), url(${homeBg})`,
+             backgroundPosition: 'center 0px', 
+             backgroundSize: '130%',
          }}>
       
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         
         {/* HEADER BIENVENIDA */}
         <div className="py-10 text-center relative">
@@ -211,10 +213,10 @@ export default function Catalog() {
 
         {/* BARRA DE FILTROS FLOTANTE */}
         <div className="mb-8 sticky top-[80px] z-30 transition-all duration-300">
-            <div className={`flex flex-col lg:flex-row items-center justify-between bg-black/70 backdrop-blur-md rounded-full px-2 py-2 transition-all duration-500
+            <div className={`flex flex-col lg:flex-row items-center justify-between bg-black/70 backdrop-blur-md border-2 rounded-full px-2 py-2 transition-all duration-500
                 ${isScrolled 
-                    ? 'border-2 border-white shadow-[0_0_5px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)]' 
-                    : 'border border-transparent shadow-none' /* CAMBIO: Sin borde plomo inicial */
+                    ? 'border-white shadow-[0_0_5px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)]' 
+                    : 'border-transparent shadow-none' 
                 }`}
             >
                 <div className="flex items-center gap-2 w-full lg:w-auto overflow-hidden px-2 relative">
@@ -254,7 +256,6 @@ export default function Catalog() {
                         placeholder="BUSCAR" 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        /* CAMBIO: Eliminado border y focus:ring para limpieza total */
                         className="w-full bg-[#1a1a1a]/80 border-none rounded-full py-2 pl-4 pr-10 text-xs text-white outline-none focus:bg-black transition-all font-sans placeholder:text-gray-500 text-right uppercase tracking-wider"
                     />
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
@@ -290,14 +291,12 @@ export default function Catalog() {
                                 ? 'GRATIS' 
                                 : `S/ ${parseFloat(currentHeroGame.price).toFixed(2)}`
                             }
-                           </span>
+                        </span>
                         
-                        {/* CAMBIO AQUÍ: Agregamos -skew-x-12 al botón */}
                         <button 
                             onClick={() => window.location.href = `/game/${currentHeroGame.id}`}
-                            className="bg-white/10 hover:bg-white/20 backdrop-blur-sm  text-white px-6 py-3 rounded-lg font-bold transition-all text-sm -skew-x-12 hover:scale-105"
+                            className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-bold transition-all text-sm -skew-x-12 hover:scale-105"
                         >
-                            {/* Y agregamos skew-x-12 al texto para enderezarlo */}
                             <span className="inline-block skew-x-12">VER DETALLES</span>
                         </button>
                       </div>
@@ -311,7 +310,7 @@ export default function Catalog() {
               </button>
           </div>
         ) : (
-            <div className="h-[200px] flex items-center justify-center text-gray-400 rounded-2xl mb-12 bg-black/50">
+            <div className="h-[200px] flex items-center justify-center text-gray-400 border-none rounded-2xl mb-12 bg-black/50">
                 <p>No se encontraron juegos para este filtro.</p>
             </div>
         )}
@@ -359,7 +358,7 @@ export default function Catalog() {
 
         {/* --- CATÁLOGO COMPLETO --- */}
         <div className="mb-16">
-             <h3 className="text-sm md:text-xl font-bold mb-6 flex items-center gap-2 uppercase tracking-wider text-white border-b border-white/20 pb-2"
+             <h3 className="text-sm md:text-xl font-bold mb-6 flex items-center gap-2 uppercase tracking-wider text-white border-white/20 pb-2"
                  style={{ fontFamily: '"Press Start 2P", cursive' }}>
                 {selectedGenre ? `JUEGOS DE ${selectedGenre}` : 'CATALOGO COMPLETO'}
             </h3>
@@ -371,7 +370,6 @@ export default function Catalog() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredGames.map((game) => (
-                        // CAMBIO: Quitado border-white/10. Agregado shadow-black en hover.
                         <div key={game.id} className="relative bg-black rounded-xl overflow-hidden transition-all group cursor-pointer shadow-lg hover:shadow-[0_5px_20px_rgba(0,0,0,1)] hover:-translate-y-1"
                              onClick={() => window.location.href = `/game/${game.id}`}>
                             
@@ -383,7 +381,7 @@ export default function Catalog() {
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-white font-bold border border-white px-4 py-1 rounded-full">VER</span>
+                                    <span className="text-white font-bold border border-white px-4 py-1 rounded-full italic tracking-widest hover:bg-white hover:text-black transition-colors">VER</span>
                                 </div>
                             </div>
 
@@ -419,7 +417,6 @@ export default function Catalog() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* NOTICIAS */}
-            {/* CAMBIO: Eliminado border */}
             <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6">
                  <h3 className="text-xs md:text-xl font-bold mb-6 border-b border-white/10 pb-3 uppercase tracking-wider text-gray-200"
                      style={{ fontFamily: '"Press Start 2P", cursive', lineHeight: '1.5' }}>
@@ -446,7 +443,6 @@ export default function Catalog() {
             </div>
 
             {/* RESEÑAS DE LA COMUNIDAD */}
-            {/* CAMBIO: Eliminado border */}
             <div className="bg-[#0a0a0a]/60 backdrop-blur-sm rounded-2xl p-6">
                 <h3 className="text-xs md:text-xl font-bold mb-6 border-b border-white/10 pb-3 uppercase tracking-wider text-gray-200"
                     style={{ fontFamily: '"Press Start 2P", cursive', lineHeight: '1.5' }}>
@@ -462,7 +458,6 @@ export default function Catalog() {
                             const reviewGameImage = getGameImage(review.gameId);
 
                             return (
-                                // CAMBIO: Eliminado border
                                 <div key={review.id} className="relative bg-black/80 rounded-xl p-4 flex gap-4 group transition-all shadow-md hover:shadow-lg">
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
@@ -503,6 +498,9 @@ export default function Catalog() {
         </div>
 
       </div>
+    
+      <Footer />
+      
     </div>
   );
 }

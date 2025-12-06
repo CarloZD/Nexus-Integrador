@@ -108,7 +108,7 @@ export default function GameDetail() {
         try {
             await addToCart(game.id, 1);
             setAddedToCart(true);
-            toast.success('Agregado al carrito');
+
             setTimeout(() => {
                 setAddedToCart(false);
             }, 2000);

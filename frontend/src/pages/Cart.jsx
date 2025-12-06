@@ -207,7 +207,7 @@ export default function Cart() {
 
             {/* --- RESUMEN (DERECHA) --- */}
             <div className="lg:col-span-1">
-              <div className="bg-[#151515] border border-white/10 rounded-[30px] p-6 sticky top-24 shadow-xl">
+              <div className="bg-black/80 border border-white rounded-[30px] p-6 sticky top-24 shadow-xl">
                 <h2 className="text-lg font-bold text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-4" 
                     style={{ fontFamily: '"Press Start 2P", cursive', lineHeight: '1.5' }}>
                   RESUMEN
