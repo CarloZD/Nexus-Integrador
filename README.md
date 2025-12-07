@@ -1,4 +1,4 @@
-# 🎮 Nexus Marketplace - Guía de Instalación despliegue
+# 🎮 Nexus Marketplace - Guía de Instalación y despliegue
 
 Marketplace de videojuegos con Spring Boot + React + MySQL
 
