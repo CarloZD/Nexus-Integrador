@@ -98,7 +98,7 @@ export default function Footer() {
                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-mono uppercase tracking-wider">
                     <span>Hecho con</span>
                     <Heart size={10} className="text-red-500 fill-current animate-pulse" />
-                    <span>por Gamers</span>
+                    <span>por desarrolladores</span>
                 </div>
             </div>
         </div>

@@ -266,7 +266,7 @@ export default function Profile() {
                   </label>
                 </div>
 
-                <div className="text-center sm:text-left mb-10">
+                <div className="text-center sm:text-left">
                   <h1 className="text-4xl md:text-5xl font-black text-white tracking-wide uppercase drop-shadow-md">
                     {profile.fullName}
                   </h1>
@@ -287,7 +287,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[0px]">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pb-0 relative top-[19px]">
                 {/* --- 3. BOTÓN MIS ÓRDENES AGREGADO --- */}
                 <button
                   onClick={() => navigate('/my-orders')}
